@@ -1,11 +1,31 @@
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
 import { Button, StyleSheet, Text, View } from 'react-native';
 import ScreenContainer from '../components/ScreenContainer';
+import { getCurrentUserId } from '../utils/authStorage';
 
 type Props = {
   navigation: any;
 };
 
-export default function TripsScreen({ navigation }: Props) {
+export default function Trips({ navigation }: Props) {
+  useFocusEffect(
+    useCallback(() => {
+      async function checkSession() {
+        const userId = await getCurrentUserId();
+
+        if (!userId) {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Login' }],
+          });
+        }
+      }
+
+      checkSession();
+    }, [navigation])
+  );
+
   return (
     <ScreenContainer>
       <View style={styles.container}>

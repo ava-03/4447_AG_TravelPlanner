@@ -1,22 +1,39 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useEffect, useState } from 'react';
 
-import Login from '../screens/Login';
-import Register from '../screens/Register';
-import Trips from '../screens/Trips';
 import Activities from '../screens/Activities';
 import Categories from '../screens/Categories';
-import Targets from '../screens/Targets';
 import Insights from '../screens/Insights';
+import Login from '../screens/Login';
 import Profile from '../screens/Profile';
+import Register from '../screens/Register';
+import Targets from '../screens/Targets';
+import Trips from '../screens/Trips';
+import { getCurrentUserId } from '../utils/authStorage';
 
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
+  const [initialRoute, setInitialRoute] = useState<'Login' | 'Trips' | null>(null);
+
+  useEffect(() => {
+    async function loadSession() {
+      const userId = await getCurrentUserId();
+      setInitialRoute(userId ? 'Trips' : 'Login');
+    }
+
+    loadSession();
+  }, []);
+
+  if (!initialRoute) {
+    return null;
+  }
+
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="Login"
+        initialRouteName={initialRoute}
         screenOptions={{
           headerTitleAlign: 'center',
         }}
