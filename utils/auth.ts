@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { db } from '../db/client';
-import { users } from '../db/schema';
+import { categories, users } from '../db/schema';
 
 export type RegisterInput = {
   name: string;
@@ -12,6 +12,41 @@ export type LoginInput = {
   email: string;
   password: string;
 };
+
+async function createDefaultCategoriesForUser(userId: number) {
+  await db.insert(categories).values([
+    {
+      userId,
+      name: 'Sightseeing',
+      color: '#3B82F6',
+      icon: 'camera',
+    },
+    {
+      userId,
+      name: 'Food',
+      color: '#F97316',
+      icon: 'restaurant',
+    },
+    {
+      userId,
+      name: 'Outdoor',
+      color: '#22C55E',
+      icon: 'leaf',
+    },
+    {
+      userId,
+      name: 'Travel',
+      color: '#8B5CF6',
+      icon: 'airplane',
+    },
+    {
+      userId,
+      name: 'Relaxation',
+      color: '#EC4899',
+      icon: 'bed',
+    },
+  ]);
+}
 
 export async function registerUser({ name, email, password }: RegisterInput) {
   const normalizedEmail = email.trim().toLowerCase();
@@ -41,7 +76,11 @@ export async function registerUser({ name, email, password }: RegisterInput) {
     throw new Error('Failed to create account.');
   }
 
-  return createdUser[0];
+  const newUser = createdUser[0];
+
+  await createDefaultCategoriesForUser(newUser.id);
+
+  return newUser;
 }
 
 export async function loginUser({ email, password }: LoginInput) {

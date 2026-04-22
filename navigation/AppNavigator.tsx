@@ -3,8 +3,10 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useEffect, useState } from 'react';
 
 import Activities from '../screens/Activities';
+import AddActivity from '../screens/AddActivity';
 import AddTrip from '../screens/AddTrip';
 import Categories from '../screens/Categories';
+import EditActivity from '../screens/EditActivity';
 import EditTrip from '../screens/EditTrip';
 import Insights from '../screens/Insights';
 import Login from '../screens/Login';
@@ -21,6 +23,8 @@ export type RootStackParamList = {
   AddTrip: undefined;
   EditTrip: { tripId: number };
   Activities: undefined;
+  AddActivity: undefined;
+  EditActivity: { activityId: number };
   Categories: undefined;
   Targets: undefined;
   Insights: undefined;
@@ -59,6 +63,8 @@ export default function AppNavigator() {
         <Stack.Screen name="AddTrip" component={AddTrip} options={{ title: 'Add Trip' }} />
         <Stack.Screen name="EditTrip" component={EditTrip} options={{ title: 'Edit Trip' }} />
         <Stack.Screen name="Activities" component={Activities} />
+        <Stack.Screen name="AddActivity" component={AddActivity} options={{ title: 'Add Activity' }} />
+        <Stack.Screen name="EditActivity" component={EditActivity} options={{ title: 'Edit Activity' }} />
         <Stack.Screen name="Categories" component={Categories} />
         <Stack.Screen name="Targets" component={Targets} />
         <Stack.Screen name="Insights" component={Insights} />
