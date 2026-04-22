@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback, useState } from 'react';
 import {
@@ -24,6 +25,24 @@ type Category = {
 type Props = {
   navigation: any;
 };
+
+function getIoniconName(iconName: string) {
+  const iconMap: Record<string, keyof typeof Ionicons.glyphMap> = {
+    camera: 'camera',
+    restaurant: 'restaurant',
+    leaf: 'leaf',
+    airplane: 'airplane',
+    bed: 'bed',
+    walk: 'walk',
+    car: 'car',
+    map: 'map',
+    cafe: 'cafe',
+    boat: 'boat',
+    sun: 'sunny',
+  };
+
+  return iconMap[iconName] || 'pricetag';
+}
 
 export default function Categories({ navigation }: Props) {
   const [categoryList, setCategoryList] = useState<Category[]>([]);
@@ -74,11 +93,20 @@ export default function Categories({ navigation }: Props) {
       <View style={styles.card}>
         <TouchableOpacity onPress={() => navigation.navigate('EditCategory', { categoryId: item.id })}>
           <View style={styles.row}>
-            <View style={[styles.colorDot, { backgroundColor: item.color || '#ccc' }]} />
+            <View style={[styles.iconCircle, { backgroundColor: item.color || '#ccc' }]}>
+              <Ionicons
+                name={(item.icon as keyof typeof Ionicons.glyphMap) || 'pricetag'}
+                size={22}
+                color="#fff"
+                />
+            </View>
+
             <View style={styles.textWrap}>
               <Text style={styles.cardTitle}>{item.name}</Text>
-              <Text style={styles.cardSubtitle}>Icon: {item.icon}</Text>
-              <Text style={styles.cardSubtitle}>Color: {item.color}</Text>
+              <View style={styles.metaRow}>
+                <View style={[styles.smallColorDot, { backgroundColor: item.color || '#ccc' }]} />
+                <Text style={styles.cardSubtitle}>{item.color}</Text>
+              </View>
             </View>
           </View>
         </TouchableOpacity>
@@ -155,11 +183,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  colorDot: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    marginRight: 12,
+  iconCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
   },
   textWrap: {
     flex: 1,
@@ -167,12 +197,21 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 20,
     fontWeight: '700',
-    marginBottom: 4,
+    marginBottom: 6,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  smallColorDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 8,
   },
   cardSubtitle: {
     fontSize: 14,
     color: '#555',
-    marginBottom: 2,
   },
   cardButtons: {
     flexDirection: 'row',
