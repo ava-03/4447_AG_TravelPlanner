@@ -310,18 +310,21 @@ export default function TripDetails({ navigation, route }: Props) {
                   onPress={() => navigation.navigate('AddActivity', { tripId: trip.id })}
                 />
               </View>
+
               <View style={styles.actionButton}>
                 <Button
                   title="Add Target"
                   onPress={() => navigation.navigate('AddTarget', { tripId: trip.id })}
                 />
               </View>
+
               <View style={styles.actionButton}>
                 <Button
                   title="Edit Trip"
                   onPress={() => navigation.navigate('EditTrip', { tripId: trip.id })}
                 />
               </View>
+
               <View style={styles.actionButton}>
                 <Button
                   title="Delete Trip"
@@ -331,16 +334,19 @@ export default function TripDetails({ navigation, route }: Props) {
               </View>
             </View>
 
-            {insights ? (
-              <TripInsightsCard
-                totalMinutes={insights.totalMinutes}
-                totalActivities={insights.totalActivities}
-                completedActivities={insights.completedActivities}
-                busiestCategory={insights.busiestCategory}
-                minutesByCategory={insights.minutesByCategory}
-              />
-            ) : null}
-
+            <Text style={styles.sectionTitle}>Activities</Text>
+          </>
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyTitle}>No activities yet</Text>
+            <Text style={styles.emptyText}>
+              Tap "Add Activity" to add activities to this trip.
+            </Text>
+          </View>
+        }
+        ListFooterComponent={
+          <>
             <Text style={styles.sectionTitle}>Targets</Text>
 
             {targets.length === 0 ? (
@@ -358,16 +364,18 @@ export default function TripDetails({ navigation, route }: Props) {
               ))
             )}
 
-            <Text style={styles.sectionTitle}>Activities</Text>
+            <Text style={styles.sectionTitle}>Insights</Text>
+
+            {insights ? (
+              <TripInsightsCard
+                totalMinutes={insights.totalMinutes}
+                totalActivities={insights.totalActivities}
+                completedActivities={insights.completedActivities}
+                busiestCategory={insights.busiestCategory}
+                minutesByCategory={insights.minutesByCategory}
+              />
+            ) : null}
           </>
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>No activities yet</Text>
-            <Text style={styles.emptyText}>
-              Tap "Add Activity" to add activities to this trip.
-            </Text>
-          </View>
         }
         contentContainerStyle={styles.listContent}
       />
