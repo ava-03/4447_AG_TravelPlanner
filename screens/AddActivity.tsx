@@ -11,25 +11,31 @@ import {
 } from 'react-native';
 import ActivityForm from '../components/ActivityForm';
 import ScreenContainer from '../components/ScreenContainer';
-import { getCurrentUserId } from '../utils/authStorage';
 import { createActivity, getCategoriesForUser, getTripsForUser } from '../utils/activities';
+import { getCurrentUserId } from '../utils/authStorage';
 
 type Props = {
   navigation: any;
+  route?: {
+    params?: {
+      tripId?: number;
+    };
+  };
 };
 
-export default function AddActivity({ navigation }: Props) {
+export default function AddActivity({ navigation, route }: Props) {
   const [tripId, setTripId] = useState(0);
   const [categoryId, setCategoryId] = useState(0);
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
-  const [metricValue, setMetricValue] = useState('');
-  const [metricUnit, setMetricUnit] = useState('minutes');
+  const [durationMinutes, setDurationMinutes] = useState('');
   const [notes, setNotes] = useState('');
   const [isCompleted, setIsCompleted] = useState(false);
   const [tripOptions, setTripOptions] = useState<{ id: number; label: string }[]>([]);
   const [categoryOptions, setCategoryOptions] = useState<{ id: number; label: string }[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const preselectedTripId = route?.params?.tripId ?? 0;
 
   useEffect(() => {
     async function loadOptions() {
@@ -46,26 +52,44 @@ export default function AddActivity({ navigation }: Props) {
       const userTrips = await getTripsForUser(userId);
       const userCategories = await getCategoriesForUser(userId);
 
-      setTripOptions(userTrips.map((trip) => ({ id: trip.id, label: trip.name })));
-      setCategoryOptions(userCategories.map((category) => ({ id: category.id, label: category.name })));
+      const mappedTrips = userTrips.map((trip) => ({
+        id: trip.id,
+        label: trip.name,
+      }));
+
+      const mappedCategories = userCategories.map((category) => ({
+        id: category.id,
+        label: category.name,
+      }));
+
+      setTripOptions(mappedTrips);
+      setCategoryOptions(mappedCategories);
+
+      if (preselectedTripId) {
+        const matchingTrip = mappedTrips.find((trip) => trip.id === preselectedTripId);
+
+        if (matchingTrip) {
+          setTripId(preselectedTripId);
+        }
+      }
     }
 
     loadOptions();
-  }, [navigation]);
+  }, [navigation, preselectedTripId]);
 
   async function handleSave() {
     try {
       setLoading(true);
 
-      if (!tripId || !categoryId || !title.trim() || !date.trim() || !metricValue.trim()) {
+      if (!tripId || !categoryId || !title.trim() || !date.trim() || !durationMinutes.trim()) {
         Alert.alert('Missing details', 'Please complete all required fields.');
         return;
       }
 
-      const parsedMetric = Number(metricValue);
+      const parsedDuration = Number(durationMinutes);
 
-      if (Number.isNaN(parsedMetric) || parsedMetric <= 0) {
-        Alert.alert('Invalid metric', 'Metric value must be a number greater than 0.');
+      if (Number.isNaN(parsedDuration) || parsedDuration <= 0) {
+        Alert.alert('Invalid duration', 'Duration must be a number greater than 0.');
         return;
       }
 
@@ -74,8 +98,8 @@ export default function AddActivity({ navigation }: Props) {
         categoryId,
         title,
         date,
-        metricValue: parsedMetric,
-        metricUnit,
+        metricValue: parsedDuration,
+        metricUnit: 'minutes',
         notes,
         isCompleted: isCompleted ? 1 : 0,
       });
@@ -97,10 +121,10 @@ export default function AddActivity({ navigation }: Props) {
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="always"
-          showsVerticalScrollIndicator={false}
-        >
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
             <Text style={styles.title}>Add Activity</Text>
 
             <ActivityForm
@@ -112,10 +136,8 @@ export default function AddActivity({ navigation }: Props) {
               setTitle={setTitle}
               date={date}
               setDate={setDate}
-              metricValue={metricValue}
-              setMetricValue={setMetricValue}
-              metricUnit={metricUnit}
-              setMetricUnit={setMetricUnit}
+              durationMinutes={durationMinutes}
+              setDurationMinutes={setDurationMinutes}
               notes={notes}
               setNotes={setNotes}
               isCompleted={isCompleted}

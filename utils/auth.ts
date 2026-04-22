@@ -13,7 +13,14 @@ export type LoginInput = {
   password: string;
 };
 
-async function createDefaultCategoriesForUser(userId: number) {
+export async function createDefaultCategoriesForUser(userId: number) {
+  const existingCategories = await db
+    .select()
+    .from(categories)
+    .where(eq(categories.userId, userId));
+
+  if (existingCategories.length > 0) return;
+
   await db.insert(categories).values([
     {
       userId,
@@ -77,7 +84,6 @@ export async function registerUser({ name, email, password }: RegisterInput) {
   }
 
   const newUser = createdUser[0];
-
   await createDefaultCategoriesForUser(newUser.id);
 
   return newUser;
@@ -100,6 +106,8 @@ export async function loginUser({ email, password }: LoginInput) {
   if (user.password !== password.trim()) {
     throw new Error('Incorrect password.');
   }
+
+  await createDefaultCategoriesForUser(user.id);
 
   return user;
 }

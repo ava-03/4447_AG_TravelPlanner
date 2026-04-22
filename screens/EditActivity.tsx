@@ -35,8 +35,7 @@ export default function EditActivity({ navigation, route }: Props) {
   const [categoryId, setCategoryId] = useState(0);
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
-  const [metricValue, setMetricValue] = useState('');
-  const [metricUnit, setMetricUnit] = useState('minutes');
+  const [durationMinutes, setDurationMinutes] = useState('');
   const [notes, setNotes] = useState('');
   const [isCompleted, setIsCompleted] = useState(false);
   const [tripOptions, setTripOptions] = useState<{ id: number; label: string }[]>([]);
@@ -67,14 +66,15 @@ export default function EditActivity({ navigation, route }: Props) {
       }
 
       setTripOptions(userTrips.map((trip) => ({ id: trip.id, label: trip.name })));
-      setCategoryOptions(userCategories.map((category) => ({ id: category.id, label: category.name })));
+      setCategoryOptions(
+        userCategories.map((category) => ({ id: category.id, label: category.name }))
+      );
 
       setTripId(activity.tripId);
       setCategoryId(activity.categoryId);
       setTitle(activity.title);
       setDate(activity.date);
-      setMetricValue(String(activity.metricValue));
-      setMetricUnit(activity.metricUnit);
+      setDurationMinutes(String(activity.metricValue));
       setNotes(activity.notes ?? '');
       setIsCompleted(activity.isCompleted === 1);
 
@@ -88,15 +88,15 @@ export default function EditActivity({ navigation, route }: Props) {
     try {
       setLoading(true);
 
-      if (!tripId || !categoryId || !title.trim() || !date.trim() || !metricValue.trim()) {
+      if (!tripId || !categoryId || !title.trim() || !date.trim() || !durationMinutes.trim()) {
         Alert.alert('Missing details', 'Please complete all required fields.');
         return;
       }
 
-      const parsedMetric = Number(metricValue);
+      const parsedDuration = Number(durationMinutes);
 
-      if (Number.isNaN(parsedMetric) || parsedMetric <= 0) {
-        Alert.alert('Invalid metric', 'Metric value must be a number greater than 0.');
+      if (Number.isNaN(parsedDuration) || parsedDuration <= 0) {
+        Alert.alert('Invalid duration', 'Duration must be a number greater than 0.');
         return;
       }
 
@@ -105,8 +105,8 @@ export default function EditActivity({ navigation, route }: Props) {
         categoryId,
         title,
         date,
-        metricValue: parsedMetric,
-        metricUnit,
+        metricValue: parsedDuration,
+        metricUnit: 'minutes',
         notes,
         isCompleted: isCompleted ? 1 : 0,
       });
@@ -136,10 +136,10 @@ export default function EditActivity({ navigation, route }: Props) {
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="always"
-          showsVerticalScrollIndicator={false}
-         >
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
             <Text style={styles.title}>Edit Activity</Text>
 
             <ActivityForm
@@ -151,10 +151,8 @@ export default function EditActivity({ navigation, route }: Props) {
               setTitle={setTitle}
               date={date}
               setDate={setDate}
-              metricValue={metricValue}
-              setMetricValue={setMetricValue}
-              metricUnit={metricUnit}
-              setMetricUnit={setMetricUnit}
+              durationMinutes={durationMinutes}
+              setDurationMinutes={setDurationMinutes}
               notes={notes}
               setNotes={setNotes}
               isCompleted={isCompleted}

@@ -74,12 +74,13 @@ export default function Trips({ navigation }: Props) {
   function renderTripItem({ item }: { item: Trip }) {
     return (
       <View style={styles.card}>
-        <TouchableOpacity onPress={() => navigation.navigate('EditTrip', { tripId: item.id })}>
+        <TouchableOpacity onPress={() => navigation.navigate('TripDetails', { tripId: item.id })}>
           <Text style={styles.cardTitle}>{item.name}</Text>
           <Text style={styles.cardSubtitle}>{item.destination}</Text>
           <Text style={styles.cardDates}>
             {item.startDate} to {item.endDate}
           </Text>
+          <Text style={styles.tapHint}>Tap to view trip details</Text>
           {item.notes ? <Text style={styles.cardNotes}>{item.notes}</Text> : null}
         </TouchableOpacity>
 
@@ -211,4 +212,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#555',
   },
+  tapHint: {
+  fontSize: 13,
+  color: '#2563eb',
+  marginBottom: 8,
+},
 });

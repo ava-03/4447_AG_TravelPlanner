@@ -26,10 +26,8 @@ type ActivityFormProps = {
   setTitle: (value: string) => void;
   date: string;
   setDate: (value: string) => void;
-  metricValue: string;
-  setMetricValue: (value: string) => void;
-  metricUnit: string;
-  setMetricUnit: (value: string) => void;
+  durationMinutes: string;
+  setDurationMinutes: (value: string) => void;
   notes: string;
   setNotes: (value: string) => void;
   isCompleted: boolean;
@@ -71,10 +69,8 @@ export default function ActivityForm({
   setTitle,
   date,
   setDate,
-  metricValue,
-  setMetricValue,
-  metricUnit,
-  setMetricUnit,
+  durationMinutes,
+  setDurationMinutes,
   notes,
   setNotes,
   isCompleted,
@@ -147,21 +143,13 @@ export default function ActivityForm({
       )}
 
       <TextInput
-      style={styles.input}
-      placeholder={metricUnit === 'minutes' ? 'Duration in minutes' : 'Count'}
-      value={metricValue}
-      onChangeText={setMetricValue}
-      keyboardType="numeric"
-      accessibilityLabel="Duration or count input"
-    />
-
-      <Text style={styles.label}>Activity Type</Text>
-      <View style={styles.pickerWrapper}>
-        <Picker selectedValue={metricUnit} onValueChange={(value) => setMetricUnit(String(value))}>
-          <Picker.Item label="Minutes" value="minutes" />
-          <Picker.Item label="Count" value="count" />
-        </Picker>
-      </View>
+        style={styles.input}
+        placeholder="Duration in minutes"
+        value={durationMinutes}
+        onChangeText={setDurationMinutes}
+        keyboardType="numeric"
+        accessibilityLabel="Duration in minutes input"
+      />
 
       <View style={styles.switchRow}>
         <Text style={styles.label}>Completed</Text>

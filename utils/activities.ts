@@ -68,3 +68,15 @@ export async function getTripsForUser(userId: number) {
 export async function getCategoriesForUser(userId: number) {
   return await db.select().from(categories).where(eq(categories.userId, userId));
 }
+
+export async function getActivitiesByTripId(tripId: number) {
+  return await db.select().from(activities).where(eq(activities.tripId, tripId));
+}
+
+export async function getCategoryMapForUser(userId: number) {
+  const userCategories = await db.select().from(categories).where(eq(categories.userId, userId));
+
+  return Object.fromEntries(
+    userCategories.map((category) => [category.id, category.name])
+  ) as Record<number, string>;
+}
