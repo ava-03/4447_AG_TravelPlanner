@@ -3,7 +3,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useEffect, useState } from 'react';
 
 import Activities from '../screens/Activities';
+import AddTrip from '../screens/AddTrip';
 import Categories from '../screens/Categories';
+import EditTrip from '../screens/EditTrip';
 import Insights from '../screens/Insights';
 import Login from '../screens/Login';
 import Profile from '../screens/Profile';
@@ -12,7 +14,20 @@ import Targets from '../screens/Targets';
 import Trips from '../screens/Trips';
 import { getCurrentUserId } from '../utils/authStorage';
 
-const Stack = createNativeStackNavigator();
+export type RootStackParamList = {
+  Login: undefined;
+  Register: undefined;
+  Trips: undefined;
+  AddTrip: undefined;
+  EditTrip: { tripId: number };
+  Activities: undefined;
+  Categories: undefined;
+  Targets: undefined;
+  Insights: undefined;
+  Profile: undefined;
+};
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
   const [initialRoute, setInitialRoute] = useState<'Login' | 'Trips' | null>(null);
@@ -41,6 +56,8 @@ export default function AppNavigator() {
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="Register" component={Register} />
         <Stack.Screen name="Trips" component={Trips} />
+        <Stack.Screen name="AddTrip" component={AddTrip} options={{ title: 'Add Trip' }} />
+        <Stack.Screen name="EditTrip" component={EditTrip} options={{ title: 'Edit Trip' }} />
         <Stack.Screen name="Activities" component={Activities} />
         <Stack.Screen name="Categories" component={Categories} />
         <Stack.Screen name="Targets" component={Targets} />
