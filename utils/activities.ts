@@ -80,3 +80,42 @@ export async function getCategoryMapForUser(userId: number) {
     userCategories.map((category) => [category.id, category.name])
   ) as Record<number, string>;
 }
+export function filterActivities(
+  activitiesList: Array<{
+    id: number;
+    tripId: number;
+    categoryId: number;
+    title: string;
+    date: string;
+    metricValue: number;
+    metricUnit: string;
+    notes: string | null;
+    isCompleted: number;
+  }>,
+  options: {
+    searchText: string;
+    categoryId: number | null;
+    startDate: string;
+    endDate: string;
+  }
+) {
+  const normalizedSearch = options.searchText.trim().toLowerCase();
+
+  return activitiesList.filter((activity) => {
+    const matchesText =
+      normalizedSearch.length === 0 ||
+      activity.title.toLowerCase().includes(normalizedSearch) ||
+      (activity.notes ?? '').toLowerCase().includes(normalizedSearch);
+
+    const matchesCategory =
+      options.categoryId === null || activity.categoryId === options.categoryId;
+
+    const matchesStartDate =
+      !options.startDate || activity.date >= options.startDate;
+
+    const matchesEndDate =
+      !options.endDate || activity.date <= options.endDate;
+
+    return matchesText && matchesCategory && matchesStartDate && matchesEndDate;
+  });
+}
