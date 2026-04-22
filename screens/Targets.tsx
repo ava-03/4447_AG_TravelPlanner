@@ -1,22 +1,31 @@
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import ScreenContainer from '../components/ScreenContainer';
 
-export default function TargetsScreen() {
+export default function Targets() {
   return (
     <ScreenContainer>
-      <Text style={styles.title}>Targets</Text>
-      <Text style={styles.subtitle}>Targets screen placeholder</Text>
+      <View style={styles.container}>
+        <Text style={styles.title}>Trip Targets</Text>
+        <Text style={styles.subtitle}>
+          Targets are managed inside each trip so you can track how busy or balanced that specific trip is.
+        </Text>
+      </View>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    gap: 16,
+  },
   title: {
     fontSize: 28,
     fontWeight: '700',
-    marginBottom: 10,
   },
   subtitle: {
     fontSize: 18,
+    color: '#555',
   },
 });

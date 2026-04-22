@@ -41,9 +41,10 @@ export const activities = sqliteTable('activities', {
 export const targets = sqliteTable('targets', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   userId: integer('user_id').notNull(),
+  tripId: integer('trip_id').notNull(),
   categoryId: integer('category_id'),
-  period: text('period').notNull(), // 'weekly' or 'monthly'
-  metricType: text('metric_type').notNull(), // 'minutes' or 'count'
+  period: text('period').notNull(), 
+  metricType: text('metric_type').notNull(),
   goal: integer('goal').notNull(),
   title: text('title').notNull(),
 });

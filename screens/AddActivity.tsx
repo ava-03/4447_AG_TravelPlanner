@@ -52,24 +52,28 @@ export default function AddActivity({ navigation, route }: Props) {
       const userTrips = await getTripsForUser(userId);
       const userCategories = await getCategoriesForUser(userId);
 
-      const mappedTrips = userTrips.map((trip) => ({
+      const mappedTrips = userTrips.map((trip: { id: number; name: string }) => ({
         id: trip.id,
         label: trip.name,
       }));
 
-      const mappedCategories = userCategories.map((category) => ({
-        id: category.id,
-        label: category.name,
-      }));
+        const mappedCategories = userCategories.map(
+        (category: { id: number; name: string }) => ({
+            id: category.id,
+            label: category.name,
+        })
+      );
 
-      setTripOptions(mappedTrips);
-      setCategoryOptions(mappedCategories);
+        setTripOptions(mappedTrips);
+        setCategoryOptions(mappedCategories);
 
-      if (preselectedTripId) {
-        const matchingTrip = mappedTrips.find((trip) => trip.id === preselectedTripId);
+        if (preselectedTripId) {
+         const matchingTrip = mappedTrips.find(
+            (trip: { id: number; label: string }) => trip.id === preselectedTripId
+        );
 
         if (matchingTrip) {
-          setTripId(preselectedTripId);
+            setTripId(preselectedTripId);
         }
       }
     }

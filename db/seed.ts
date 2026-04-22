@@ -210,33 +210,36 @@ export async function seedDatabaseIfEmpty() {
     },
   ]);
 
-  await db.insert(targets).values([
+    await db.insert(targets).values([
     {
       id: 1,
       userId: 1,
-      categoryId: null,
+      tripId: 1,
+      categoryId: 1,
       period: 'weekly',
       metricType: 'minutes',
       goal: 300,
-      title: 'Weekly total activity minutes',
+      title: 'Barcelona sightseeing target',
     },
     {
       id: 2,
       userId: 1,
+      tripId: 2,
       categoryId: 3,
       period: 'weekly',
       metricType: 'minutes',
       goal: 180,
-      title: 'Weekly outdoor minutes',
+      title: 'Alps outdoor target',
     },
     {
       id: 3,
       userId: 1,
-      categoryId: 1,
-      period: 'monthly',
-      metricType: 'count',
-      goal: 4,
-      title: 'Monthly sightseeing activities',
+      tripId: 1,
+      categoryId: null,
+      period: 'weekly',
+      metricType: 'minutes',
+      goal: 400,
+      title: 'Barcelona total activity target',
     },
   ]);
 }

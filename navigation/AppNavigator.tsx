@@ -5,10 +5,12 @@ import { useEffect, useState } from 'react';
 import Activities from '../screens/Activities';
 import AddActivity from '../screens/AddActivity';
 import AddCategory from '../screens/AddCategory';
+import AddTarget from '../screens/AddTarget';
 import AddTrip from '../screens/AddTrip';
 import Categories from '../screens/Categories';
 import EditActivity from '../screens/EditActivity';
 import EditCategory from '../screens/EditCategory';
+import EditTarget from '../screens/EditTarget';
 import EditTrip from '../screens/EditTrip';
 import Insights from '../screens/Insights';
 import Login from '../screens/Login';
@@ -33,6 +35,8 @@ export type RootStackParamList = {
   AddCategory: undefined;
   EditCategory: { categoryId: number };
   Targets: undefined;
+  AddTarget: undefined;
+  EditTarget: { targetId: number };
   Insights: undefined;
   Profile: undefined;
 };
@@ -76,6 +80,8 @@ export default function AppNavigator() {
         <Stack.Screen name="AddCategory" component={AddCategory} options={{ title: 'Add Category' }} />
         <Stack.Screen name="EditCategory" component={EditCategory} options={{ title: 'Edit Category' }} />
         <Stack.Screen name="Targets" component={Targets} />
+        <Stack.Screen name="AddTarget" component={AddTarget} options={{ title: 'Add Target' }} />
+        <Stack.Screen name="EditTarget" component={EditTarget} options={{ title: 'Edit Target' }} />
         <Stack.Screen name="Insights" component={Insights} />
         <Stack.Screen name="Profile" component={Profile} />
       </Stack.Navigator>
