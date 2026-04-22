@@ -1,12 +1,14 @@
+import { Picker } from '@react-native-picker/picker';
 import { useFocusEffect } from '@react-navigation/native';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
   Button,
   FlatList,
+  Pressable,
   StyleSheet,
   Text,
-  TouchableOpacity,
+  TextInput,
   View,
 } from 'react-native';
 import ScreenContainer from '../components/ScreenContainer';
@@ -81,9 +83,30 @@ type TripInsights = {
   minutesByCategory: { name: string; minutes: number }[];
 };
 
-function formatDisplayDate(isoDate: string) {
-  const [year, month, day] = isoDate.split('-');
-  if (!year || !month || !day) return isoDate;
+function parseDate(value: string) {
+  const parts = value.split('-');
+
+  if (parts[0]?.length === 4) {
+    return new Date(
+      Number(parts[0]),
+      Number(parts[1]) - 1,
+      Number(parts[2])
+    );
+  }
+
+  return new Date(
+    Number(parts[2]),
+    Number(parts[1]) - 1,
+    Number(parts[0])
+  );
+}
+
+function formatDisplayDate(value: string) {
+  const date = parseDate(value);
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+
   return `${day}-${month}-${year}`;
 }
 
@@ -96,6 +119,10 @@ export default function TripDetails({ navigation, route }: Props) {
   const [categoryMap, setCategoryMap] = useState<Record<number, string>>({});
   const [insights, setInsights] = useState<TripInsights | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const [searchText, setSearchText] = useState('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'not_completed'>('all');
 
   const loadData = useCallback(async () => {
     const userId = await getCurrentUserId();
@@ -131,8 +158,12 @@ export default function TripDetails({ navigation, route }: Props) {
       })
     );
 
+    const sortedActivities = [...tripActivities].sort(
+      (a, b) => parseDate(a.date).getTime() - parseDate(b.date).getTime()
+    );
+
     setTrip(foundTrip);
-    setActivities(tripActivities);
+    setActivities(sortedActivities);
     setTargets(targetsWithProgress);
     setCategoryMap(categories);
     setInsights(tripInsights);
@@ -144,6 +175,40 @@ export default function TripDetails({ navigation, route }: Props) {
       loadData();
     }, [loadData])
   );
+
+  const categoryOptions = useMemo(() => {
+    return Object.entries(categoryMap).map(([id, name]) => ({
+      id: Number(id),
+      name,
+    }));
+  }, [categoryMap]);
+
+  const filteredActivities = useMemo(() => {
+    const normalizedSearch = searchText.trim().toLowerCase();
+
+    return activities.filter((activity) => {
+      const matchesText =
+        normalizedSearch.length === 0 ||
+        activity.title.toLowerCase().includes(normalizedSearch) ||
+        (activity.notes ?? '').toLowerCase().includes(normalizedSearch);
+
+      const matchesCategory =
+        selectedCategoryId === null || activity.categoryId === selectedCategoryId;
+
+      const matchesStatus =
+        statusFilter === 'all' ||
+        (statusFilter === 'completed' && activity.isCompleted === 1) ||
+        (statusFilter === 'not_completed' && activity.isCompleted === 0);
+
+      return matchesText && matchesCategory && matchesStatus;
+    });
+  }, [activities, searchText, selectedCategoryId, statusFilter]);
+
+  function clearActivityFilters() {
+    setSearchText('');
+    setSelectedCategoryId(null);
+    setStatusFilter('all');
+  }
 
   function handleDeleteTrip() {
     if (!trip) return;
@@ -210,9 +275,7 @@ export default function TripDetails({ navigation, route }: Props) {
   function renderActivityItem({ item }: { item: Activity }) {
     return (
       <View style={styles.activityCard}>
-        <TouchableOpacity
-          onPress={() => navigation.navigate('EditActivity', { activityId: item.id })}
-        >
+        <Pressable onPress={() => navigation.navigate('EditActivity', { activityId: item.id })}>
           <Text style={styles.activityTitle}>{item.title}</Text>
           <Text style={styles.activityMeta}>
             {formatDisplayDate(item.date)} • {item.metricValue} mins
@@ -224,7 +287,7 @@ export default function TripDetails({ navigation, route }: Props) {
             Status: {item.isCompleted === 1 ? 'Completed' : 'Not completed'}
           </Text>
           {item.notes ? <Text style={styles.activityNotes}>{item.notes}</Text> : null}
-        </TouchableOpacity>
+        </Pressable>
 
         <View style={styles.rowButtons}>
           <View style={styles.halfButton}>
@@ -289,59 +352,171 @@ export default function TripDetails({ navigation, route }: Props) {
   return (
     <ScreenContainer>
       <FlatList
-        data={activities}
+        data={filteredActivities}
         keyExtractor={(item) => `activity-${item.id}`}
         renderItem={renderActivityItem}
+        contentContainerStyle={styles.listContent}
         ListHeaderComponent={
           <>
             <View style={styles.tripCard}>
               <Text style={styles.tripTitle}>{trip.name}</Text>
               <Text style={styles.tripDestination}>{trip.destination}</Text>
               <Text style={styles.tripDates}>
-                {formatDisplayDate(trip.startDate)} to {formatDisplayDate(trip.endDate)}
+                {formatDisplayDate(trip.startDate)} → {formatDisplayDate(trip.endDate)}
               </Text>
               {trip.notes ? <Text style={styles.tripNotes}>{trip.notes}</Text> : null}
             </View>
 
             <View style={styles.tripActions}>
-              <View style={styles.actionButton}>
-                <Button
-                  title="Add Activity"
-                  onPress={() => navigation.navigate('AddActivity', { tripId: trip.id })}
-                />
-              </View>
+  <View style={styles.primaryActionRow}>
+    <Pressable
+      style={[styles.actionCard, styles.primaryAction]}
+      onPress={() => navigation.navigate('AddActivity', { tripId: trip.id })}
+    >
+      <Text style={styles.primaryActionText}>+ Add Activity</Text>
+    </Pressable>
 
-              <View style={styles.actionButton}>
-                <Button
-                  title="Add Target"
-                  onPress={() => navigation.navigate('AddTarget', { tripId: trip.id })}
-                />
-              </View>
+    <Pressable
+      style={[styles.actionCard, styles.primaryAction]}
+      onPress={() => navigation.navigate('AddTarget', { tripId: trip.id })}
+    >
+      <Text style={styles.primaryActionText}>+ Add Target</Text>
+    </Pressable>
+  </View>
 
-              <View style={styles.actionButton}>
-                <Button
-                  title="Edit Trip"
-                  onPress={() => navigation.navigate('EditTrip', { tripId: trip.id })}
-                />
-              </View>
+  <View style={styles.secondaryActionRow}>
+    <Pressable
+      style={[styles.actionCard, styles.secondaryAction]}
+      onPress={() => navigation.navigate('EditTrip', { tripId: trip.id })}
+    >
+      <Text style={styles.secondaryActionText}>Edit Trip</Text>
+    </Pressable>
 
-              <View style={styles.actionButton}>
-                <Button
-                  title="Delete Trip"
-                  color="#c62828"
-                  onPress={handleDeleteTrip}
-                />
-              </View>
-            </View>
+    <Pressable
+      style={[styles.actionCard, styles.deleteAction]}
+      onPress={handleDeleteTrip}
+    >
+      <Text style={styles.deleteActionText}>Delete Trip</Text>
+    </Pressable>
+  </View>
+</View>
 
             <Text style={styles.sectionTitle}>Activities</Text>
+
+            <View style={styles.filtersCard}>
+  <TextInput
+    style={styles.input}
+    placeholder="Search activities"
+    value={searchText}
+    onChangeText={setSearchText}
+    accessibilityLabel="Search trip activities input"
+  />
+
+  <Text style={styles.filterLabel}>Category</Text>
+  <View style={styles.filterChipsRow}>
+    <Pressable
+      style={[
+        styles.filterChip,
+        selectedCategoryId === null && styles.filterChipActive,
+      ]}
+      onPress={() => setSelectedCategoryId(null)}
+    >
+      <Text
+        style={[
+          styles.filterChipText,
+          selectedCategoryId === null && styles.filterChipTextActive,
+        ]}
+      >
+        All
+      </Text>
+    </Pressable>
+
+    {categoryOptions.map((category) => (
+      <Pressable
+        key={category.id}
+        style={[
+          styles.filterChip,
+          selectedCategoryId === category.id && styles.filterChipActive,
+        ]}
+        onPress={() => setSelectedCategoryId(category.id)}
+      >
+        <Text
+          style={[
+            styles.filterChipText,
+            selectedCategoryId === category.id && styles.filterChipTextActive,
+          ]}
+        >
+          {category.name}
+        </Text>
+      </Pressable>
+    ))}
+  </View>
+
+  <Text style={styles.filterLabel}>Status</Text>
+  <View style={styles.filterChipsRow}>
+    <Pressable
+      style={[
+        styles.filterChip,
+        statusFilter === 'all' && styles.filterChipActive,
+      ]}
+      onPress={() => setStatusFilter('all')}
+    >
+      <Text
+        style={[
+          styles.filterChipText,
+          statusFilter === 'all' && styles.filterChipTextActive,
+        ]}
+      >
+        All
+      </Text>
+    </Pressable>
+
+    <Pressable
+      style={[
+        styles.filterChip,
+        statusFilter === 'completed' && styles.filterChipActive,
+      ]}
+      onPress={() => setStatusFilter('completed')}
+    >
+      <Text
+        style={[
+          styles.filterChipText,
+          statusFilter === 'completed' && styles.filterChipTextActive,
+        ]}
+      >
+        Completed
+      </Text>
+    </Pressable>
+
+    <Pressable
+      style={[
+        styles.filterChip,
+        statusFilter === 'not_completed' && styles.filterChipActive,
+      ]}
+      onPress={() => setStatusFilter('not_completed')}
+    >
+      <Text
+        style={[
+          styles.filterChipText,
+          statusFilter === 'not_completed' && styles.filterChipTextActive,
+        ]}
+      >
+        Not Completed
+      </Text>
+    </Pressable>
+  </View>
+
+  <Pressable style={styles.clearFiltersButton} onPress={clearActivityFilters}>
+    <Text style={styles.clearFiltersText}>Clear Filters</Text>
+  </Pressable>
+</View>
           </>
         }
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>No activities yet</Text>
+            <Text style={styles.emptyTitle}>No matching activities</Text>
             <Text style={styles.emptyText}>
-              Tap "Add Activity" to add activities to this trip.
+              Try changing the activity filters or add a new activity.
             </Text>
           </View>
         }
@@ -377,7 +552,6 @@ export default function TripDetails({ navigation, route }: Props) {
             ) : null}
           </>
         }
-        contentContainerStyle={styles.listContent}
       />
     </ScreenContainer>
   );
@@ -414,16 +588,132 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   tripActions: {
-    marginBottom: 20,
-  },
-  actionButton: {
-    marginBottom: 10,
-  },
+  marginBottom: 22,
+  gap: 10,
+},
+
+primaryActionRow: {
+  flexDirection: 'row',
+  gap: 10,
+},
+
+secondaryActionRow: {
+  flexDirection: 'row',
+  gap: 10,
+},
+
+actionCard: {
+  flex: 1,
+  borderRadius: 14,
+  paddingVertical: 14,
+  paddingHorizontal: 12,
+  alignItems: 'center',
+  justifyContent: 'center',
+  borderWidth: 1,
+},
+
+primaryAction: {
+  backgroundColor: '#111',
+  borderColor: '#111',
+},
+
+primaryActionText: {
+  color: '#fff',
+  fontSize: 15,
+  fontWeight: '700',
+},
+
+secondaryAction: {
+  backgroundColor: '#fff',
+  borderColor: '#d1d5db',
+},
+
+secondaryActionText: {
+  color: '#2563eb',
+  fontSize: 15,
+  fontWeight: '700',
+},
+
+deleteAction: {
+  backgroundColor: '#fff',
+  borderColor: '#d1d5db',
+},
+
+deleteActionText: {
+  color: '#dc2626',
+  fontSize: 15,
+  fontWeight: '700',
+},
   sectionTitle: {
     fontSize: 24,
     fontWeight: '700',
     marginBottom: 14,
   },
+  filtersCard: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 16,
+    gap: 12,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+    backgroundColor: '#fff',
+  },
+  filterLabel: {
+  fontSize: 14,
+  fontWeight: '600',
+  color: '#555',
+  marginBottom: -4,
+},
+
+filterChipsRow: {
+  flexDirection: 'row',
+  flexWrap: 'wrap',
+  gap: 8,
+},
+
+filterChip: {
+  paddingHorizontal: 12,
+  paddingVertical: 8,
+  borderRadius: 999,
+  backgroundColor: '#f3f4f6',
+  borderWidth: 1,
+  borderColor: '#e5e7eb',
+},
+
+filterChipActive: {
+  backgroundColor: '#111',
+  borderColor: '#111',
+},
+
+filterChipText: {
+  fontSize: 14,
+  color: '#333',
+  fontWeight: '500',
+},
+
+filterChipTextActive: {
+  color: '#fff',
+},
+
+clearFiltersButton: {
+  alignSelf: 'flex-start',
+  marginTop: 4,
+},
+
+clearFiltersText: {
+  color: '#2563eb',
+  fontSize: 15,
+  fontWeight: '600',
+},
   activityCard: {
     backgroundColor: '#fff',
     borderWidth: 1,
