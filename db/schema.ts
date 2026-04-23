@@ -33,9 +33,9 @@ export const activities = sqliteTable('activities', {
   title: text('title').notNull(),
   date: text('date').notNull(),
   metricValue: integer('metric_value').notNull(),
-  metricUnit: text('metric_unit').notNull(), // e.g. 'minutes' or 'count'
+  metricUnit: text('metric_unit').notNull(),
   notes: text('notes'),
-  isCompleted: integer('is_completed').notNull().default(0), // 0 = false, 1 = true
+  isCompleted: integer('is_completed').notNull().default(0),
 });
 
 export const targets = sqliteTable('targets', {
@@ -43,8 +43,15 @@ export const targets = sqliteTable('targets', {
   userId: integer('user_id').notNull(),
   tripId: integer('trip_id').notNull(),
   categoryId: integer('category_id'),
-  period: text('period').notNull(), 
+  period: text('period').notNull(),
   metricType: text('metric_type').notNull(),
   goal: integer('goal').notNull(),
   title: text('title').notNull(),
+});
+
+export const packingItems = sqliteTable('packing_items', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  tripId: integer('trip_id').notNull(),
+  title: text('title').notNull(),
+  isChecked: integer('is_checked').notNull().default(0),
 });

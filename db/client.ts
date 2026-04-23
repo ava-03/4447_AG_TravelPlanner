@@ -1,7 +1,7 @@
 import { drizzle } from 'drizzle-orm/expo-sqlite';
 import { openDatabaseSync } from 'expo-sqlite';
 
-const sqlite = openDatabaseSync('app_v2.db');
+const sqlite = openDatabaseSync('app_v3.db');
 
 sqlite.execSync(`
   PRAGMA foreign_keys = ON;
@@ -61,6 +61,14 @@ sqlite.execSync(`
     FOREIGN KEY (trip_id) REFERENCES trips(id) ON DELETE CASCADE,
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
   );
+
+  CREATE TABLE IF NOT EXISTS packing_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  trip_id INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  is_checked INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY (trip_id) REFERENCES trips(id) ON DELETE CASCADE
+);
 `);
 
 export const db = drizzle(sqlite);

@@ -21,6 +21,12 @@ import { getCurrentUserId } from '../utils/authStorage';
 import { exportTripActivitiesToCsv } from '../utils/exportCsv';
 import { getTripInsights } from '../utils/insights';
 import {
+  createPackingItem,
+  deletePackingItem,
+  getPackingItemsByTripId,
+  togglePackingItem,
+} from '../utils/packing';
+import {
   calculateTripTargetProgress,
   deleteTarget,
   getTargetsByTripId,
@@ -57,6 +63,13 @@ type Activity = {
   metricUnit: string;
   notes: string | null;
   isCompleted: number;
+};
+
+type PackingItem = {
+  id: number;
+  tripId: number;
+  title: string;
+  isChecked: number;
 };
 
 type TripTarget = {
@@ -152,6 +165,8 @@ export default function TripDetails({ navigation, route }: Props) {
 
   const [trip, setTrip] = useState<Trip | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [packingItems, setPackingItems] = useState<PackingItem[]>([]);
+  const [newPackingItem, setNewPackingItem] = useState('');
   const [targets, setTargets] = useState<TripTargetWithProgress[]>([]);
   const [categoryMap, setCategoryMap] = useState<Record<number, string>>({});
   const [insights, setInsights] = useState<TripInsights | null>(null);
@@ -180,10 +195,14 @@ export default function TripDetails({ navigation, route }: Props) {
       return;
     }
 
-    const tripActivities = await getActivitiesByTripId(tripId);
-    const tripTargets = await getTargetsByTripId(tripId);
-    const categories = await getCategoryMapForUser(userId);
-    const tripInsights = await getTripInsights(tripId);
+    const [tripActivities, tripTargets, categories, tripInsights, tripPackingItems] =
+      await Promise.all([
+        getActivitiesByTripId(tripId),
+        getTargetsByTripId(tripId),
+        getCategoryMapForUser(userId),
+        getTripInsights(tripId),
+        getPackingItemsByTripId(tripId),
+      ]);
 
     const targetsWithProgress = await Promise.all(
       tripTargets.map(async (target: TripTarget) => {
@@ -201,6 +220,7 @@ export default function TripDetails({ navigation, route }: Props) {
 
     setTrip(foundTrip);
     setActivities(sortedActivities);
+    setPackingItems(tripPackingItems);
     setTargets(targetsWithProgress);
     setCategoryMap(categories);
     setInsights(tripInsights);
@@ -247,6 +267,28 @@ export default function TripDetails({ navigation, route }: Props) {
     setStatusFilter('all');
   }
 
+  async function handleAddPackingItem() {
+    if (!newPackingItem.trim()) return;
+
+    try {
+      await createPackingItem(tripId, newPackingItem);
+      setNewPackingItem('');
+      await loadData();
+    } catch {
+      Alert.alert('Error', 'Failed to add packing item.');
+    }
+  }
+
+  async function handleTogglePackingItem(item: PackingItem) {
+    await togglePackingItem(item.id, item.isChecked);
+    await loadData();
+  }
+
+  async function handleDeletePackingItem(item: PackingItem) {
+    await deletePackingItem(item.id);
+    await loadData();
+  }
+
   async function handleExportCsv() {
     if (!trip) return;
 
@@ -276,7 +318,7 @@ export default function TripDetails({ navigation, route }: Props) {
 
     Alert.alert(
       'Delete trip',
-      `Are you sure you want to delete "${trip.name}"? This will also delete all activities and targets for this trip.`,
+      `Are you sure you want to delete "${trip.name}"? This will also delete all activities, packing items and targets for this trip.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -587,6 +629,86 @@ export default function TripDetails({ navigation, route }: Props) {
               </View>
             </View>
 
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Packing List</Text>
+
+            <View
+              style={[
+                styles.packingCard,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
+            >
+              <View style={styles.packingInputRow}>
+                <TextInput
+                  style={[
+                    styles.packingInput,
+                    {
+                      backgroundColor: colors.input,
+                      borderColor: colors.border,
+                      color: colors.text,
+                    },
+                  ]}
+                  placeholder="Add packing item"
+                  placeholderTextColor={colors.placeholder}
+                  value={newPackingItem}
+                  onChangeText={setNewPackingItem}
+                />
+                <Pressable
+                  style={[styles.addPackingButton, { backgroundColor: colors.accent }]}
+                  onPress={handleAddPackingItem}
+                >
+                  <Text style={styles.addPackingButtonText}>Add</Text>
+                </Pressable>
+              </View>
+
+              {packingItems.length === 0 ? (
+                <Text style={[styles.packingEmptyText, { color: colors.subtext }]}>
+                  No packing items yet.
+                </Text>
+              ) : (
+                packingItems.map((item) => (
+                  <View key={item.id} style={styles.packingItemRow}>
+                    <Pressable
+                      style={styles.packingLeft}
+                      onPress={() => handleTogglePackingItem(item)}
+                    >
+                      <View
+                        style={[
+                          styles.checkbox,
+                          {
+                            borderColor: item.isChecked === 1 ? colors.accent : colors.border,
+                            backgroundColor: item.isChecked === 1 ? colors.accent : 'transparent',
+                          },
+                        ]}
+                      >
+                        {item.isChecked === 1 ? (
+                          <Text style={styles.checkboxTick}>✓</Text>
+                        ) : null}
+                      </View>
+
+                      <Text
+                        style={[
+                          styles.packingItemText,
+                          {
+                            color: colors.text,
+                            textDecorationLine: item.isChecked === 1 ? 'line-through' : 'none',
+                            opacity: item.isChecked === 1 ? 0.7 : 1,
+                          },
+                        ]}
+                      >
+                        {item.title}
+                      </Text>
+                    </Pressable>
+
+                    <Pressable onPress={() => handleDeletePackingItem(item)}>
+                      <Text style={[styles.deletePackingText, { color: colors.danger }]}>
+                        Delete
+                      </Text>
+                    </Pressable>
+                  </View>
+                ))
+              )}
+            </View>
+
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Activities</Text>
 
             <View
@@ -895,6 +1017,74 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     marginBottom: 14,
+  },
+  packingCard: {
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 18,
+  },
+  packingInputRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 12,
+  },
+  packingInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+  },
+  addPackingButton: {
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addPackingButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  packingEmptyText: {
+    fontSize: 15,
+  },
+  packingItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+  },
+  packingLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 10,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  checkboxTick: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  packingItemText: {
+    fontSize: 16,
+    flex: 1,
+  },
+  deletePackingText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   filtersCard: {
     borderWidth: 1,
