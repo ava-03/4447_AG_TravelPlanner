@@ -13,17 +13,17 @@ type CategoryFormProps = {
   loading?: boolean;
 };
 
-const CATEGORY_COLORS = [
-  '#3B82F6',
-  '#F97316',
-  '#22C55E',
+const COLOR_OPTIONS = [
+  '#3B82F6', 
+  '#22C55E', 
+  '#EF4444', 
   '#8B5CF6',
-  '#EC4899',
-  '#EF4444',
-  '#14B8A6',
-  '#EAB308',
-  '#6366F1',
-  '#6B7280',
+  '#F97316', 
+  '#EAB308', 
+  '#EC4899', 
+  '#14B8A6', 
+  '#6B7280', 
+  '#8B5E3C', 
 ];
 
 const CATEGORY_ICONS: Array<keyof typeof Ionicons.glyphMap> = [
@@ -58,26 +58,33 @@ export default function CategoryForm({
         value={name}
         onChangeText={setName}
         accessibilityLabel="Category name input"
+        placeholderTextColor="#888"
       />
 
       <Text style={styles.label}>Choose a color</Text>
-      <View style={styles.optionsRow}>
-        {CATEGORY_COLORS.map((optionColor) => (
+      <View style={styles.colorGrid}>
+        {COLOR_OPTIONS.map((optionColor: string) => (
           <Pressable
             key={optionColor}
-            onPress={() => setColor(optionColor)}
             style={[
-              styles.colorOption,
-              { backgroundColor: optionColor },
-              color === optionColor && styles.selectedOption,
+              styles.colorOptionOuter,
+              color === optionColor && styles.selectedColorOuter,
             ]}
-            accessibilityLabel={`Select color ${optionColor}`}
-          />
+            onPress={() => setColor(optionColor)}
+            accessibilityLabel={`Choose color ${optionColor}`}
+          >
+            <View
+              style={[
+                styles.colorOptionInner,
+                { backgroundColor: optionColor },
+              ]}
+            />
+          </Pressable>
         ))}
       </View>
 
       <Text style={styles.label}>Choose an icon</Text>
-      <View style={styles.optionsRow}>
+      <View style={styles.iconGrid}>
         {CATEGORY_ICONS.map((optionIcon) => (
           <Pressable
             key={optionIcon}
@@ -88,43 +95,28 @@ export default function CategoryForm({
             ]}
             accessibilityLabel={`Select icon ${optionIcon}`}
           >
-            <Ionicons name={optionIcon} size={22} color="#111" />
+            <Ionicons name={optionIcon} size={20} color="#111" />
           </Pressable>
         ))}
       </View>
 
-      <View style={styles.previewCard}>
-        <Text style={styles.previewLabel}>Preview</Text>
-        <View style={styles.previewRow}>
-          <View
-            style={[
-              styles.previewIconCircle,
-              { backgroundColor: color || '#ccc' },
-            ]}
-          >
-            <Ionicons
-              name={(icon as keyof typeof Ionicons.glyphMap) || 'pricetag'}
-              size={22}
-              color="#fff"
-            />
-          </View>
-          <Text style={styles.previewText}>{name || 'Category name'}</Text>
-        </View>
-      </View>
-
-      <Button title={loading ? 'Saving...' : submitLabel} onPress={onSubmit} disabled={loading} />
+      <Button
+        title={loading ? 'Saving...' : submitLabel}
+        onPress={onSubmit}
+        disabled={loading}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    gap: 16,
+    gap: 14,
   },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 10,
+    borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 16,
@@ -133,22 +125,34 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: -4,
+    marginBottom: -2,
   },
-  optionsRow: {
+  colorGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
   },
-  colorOption: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+  colorOptionOuter: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     borderWidth: 2,
     borderColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  selectedOption: {
+  selectedColorOuter: {
     borderColor: '#111',
+  },
+  colorOptionInner: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+  },
+  iconGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
   },
   iconOption: {
     width: 48,
@@ -163,33 +167,5 @@ const styles = StyleSheet.create({
   selectedIconOption: {
     borderColor: '#111',
     backgroundColor: '#f3f4f6',
-  },
-  previewCard: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 14,
-    padding: 14,
-    backgroundColor: '#fff',
-  },
-  previewLabel: {
-    fontSize: 14,
-    color: '#555',
-    marginBottom: 10,
-  },
-  previewRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  previewIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  previewText: {
-    fontSize: 18,
-    fontWeight: '600',
   },
 });
