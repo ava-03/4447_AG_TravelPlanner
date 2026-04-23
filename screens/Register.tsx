@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -20,13 +21,48 @@ type Props = {
 };
 
 export default function Register({ navigation }: Props) {
-  const { colors, themeMode } = useTheme();
+  const { themeMode } = useTheme();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Screen palette
+  const palette =
+    themeMode === 'dark'
+      ? {
+          page: '#0F172A',
+          hero: '#132A46',
+          heroBorder: '#1F3D63',
+          card: '#17263D',
+          border: '#28405F',
+          text: '#F8FAFC',
+          subtext: '#C7D2E0',
+          input: '#10233A',
+          placeholder: '#8FA0B6',
+          primary: '#C4622D',
+          primaryText: '#FFFFFF',
+          secondaryBg: '#111C2D',
+          link: '#D4A853',
+        }
+      : {
+          page: '#F5F0E8',
+          hero: '#1A2E44',
+          heroBorder: '#1A2E44',
+          card: '#FFFFFF',
+          border: '#DDD6CA',
+          text: '#18212B',
+          subtext: '#6B7280',
+          input: '#FFFFFF',
+          placeholder: '#9CA3AF',
+          primary: '#C4622D',
+          primaryText: '#FFFFFF',
+          secondaryBg: '#F8F5EF',
+          link: '#C4622D',
+        };
+
+  // Register action
   async function handleRegister() {
     try {
       setLoading(true);
@@ -60,38 +96,58 @@ export default function Register({ navigation }: Props) {
   return (
     <ScreenContainer>
       <KeyboardAvoidingView
-        style={styles.flex}
+        style={[styles.flex, { backgroundColor: palette.page }]}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={styles.container}>
-          <View style={styles.hero}>
-            <Text style={[styles.brand, { color: colors.text }]}>Brand</Text>
+          {/* Logo and brand block */}
+          <View
+            style={[
+              styles.heroCard,
+              {
+                backgroundColor: palette.hero,
+                borderColor: palette.heroBorder,
+              },
+            ]}
+          >
+            <Image
+              source={require('../assets/wanderly_logo.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+
+            <Text style={styles.brandTitle}>Wanderly</Text>
+
+            <Text style={styles.brandSubtitle}>
+              Plan. Pack. Explore.
+            </Text>
           </View>
 
+          {/* Register form card */}
           <View
             style={[
               styles.card,
               {
-                backgroundColor: colors.card,
-                borderColor: colors.border,
+                backgroundColor: palette.card,
+                borderColor: palette.border,
               },
             ]}
           >
-            <Text style={[styles.cardTitle, { color: colors.text }]}>Register</Text>
+            <Text style={[styles.cardTitle, { color: palette.text }]}>Register</Text>
 
             <View style={styles.formGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>Name</Text>
+              <Text style={[styles.label, { color: palette.text }]}>Name</Text>
               <TextInput
                 style={[
                   styles.input,
                   {
-                    backgroundColor: colors.input,
-                    borderColor: colors.border,
-                    color: colors.text,
+                    backgroundColor: palette.input,
+                    borderColor: palette.border,
+                    color: palette.text,
                   },
                 ]}
                 placeholder="Enter your name"
-                placeholderTextColor={colors.placeholder}
+                placeholderTextColor={palette.placeholder}
                 value={name}
                 onChangeText={setName}
                 accessibilityLabel="Name input"
@@ -99,18 +155,18 @@ export default function Register({ navigation }: Props) {
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>Email</Text>
+              <Text style={[styles.label, { color: palette.text }]}>Email</Text>
               <TextInput
                 style={[
                   styles.input,
                   {
-                    backgroundColor: colors.input,
-                    borderColor: colors.border,
-                    color: colors.text,
+                    backgroundColor: palette.input,
+                    borderColor: palette.border,
+                    color: palette.text,
                   },
                 ]}
                 placeholder="Enter your email"
-                placeholderTextColor={colors.placeholder}
+                placeholderTextColor={palette.placeholder}
                 value={email}
                 onChangeText={setEmail}
                 autoCapitalize="none"
@@ -120,18 +176,18 @@ export default function Register({ navigation }: Props) {
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>Password</Text>
+              <Text style={[styles.label, { color: palette.text }]}>Password</Text>
               <TextInput
                 style={[
                   styles.input,
                   {
-                    backgroundColor: colors.input,
-                    borderColor: colors.border,
-                    color: colors.text,
+                    backgroundColor: palette.input,
+                    borderColor: palette.border,
+                    color: palette.text,
                   },
                 ]}
                 placeholder="Create a password"
-                placeholderTextColor={colors.placeholder}
+                placeholderTextColor={palette.placeholder}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
@@ -143,7 +199,7 @@ export default function Register({ navigation }: Props) {
               style={[
                 styles.primaryButton,
                 {
-                  backgroundColor: colors.accent,
+                  backgroundColor: palette.primary,
                   opacity: loading ? 0.7 : 1,
                 },
               ]}
@@ -151,14 +207,9 @@ export default function Register({ navigation }: Props) {
               disabled={loading}
             >
               {loading ? (
-                <ActivityIndicator color={themeMode === 'dark' ? '#0f1115' : '#ffffff'} />
+                <ActivityIndicator color={palette.primaryText} />
               ) : (
-                <Text
-                  style={[
-                    styles.primaryButtonText,
-                    { color: themeMode === 'dark' ? '#0f1115' : '#ffffff' },
-                  ]}
-                >
+                <Text style={[styles.primaryButtonText, { color: palette.primaryText }]}>
                   Create Account
                 </Text>
               )}
@@ -168,25 +219,15 @@ export default function Register({ navigation }: Props) {
               style={[
                 styles.secondaryButton,
                 {
-                  backgroundColor: colors.background,
-                  borderColor: colors.border,
+                  backgroundColor: palette.secondaryBg,
+                  borderColor: palette.border,
                 },
               ]}
               onPress={() => navigation.goBack()}
               disabled={loading}
             >
-              <Text style={[styles.secondaryButtonText, { color: colors.accent }]}>
+              <Text style={[styles.secondaryButtonText, { color: palette.text }]}>
                 Back to Login
-              </Text>
-            </Pressable>
-
-            <Pressable
-              style={styles.linkButton}
-              onPress={() => navigation.goBack()}
-              disabled={loading}
-            >
-              <Text style={[styles.linkText, { color: colors.subtext }]}>
-                Already have an account? Log in
               </Text>
             </Pressable>
           </View>
@@ -200,24 +241,46 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
   },
+
+  // Main page layout
   container: {
     flex: 1,
     justifyContent: 'center',
     paddingVertical: 24,
   },
-  hero: {
-    marginBottom: 24,
+
+  // Logo block
+  heroCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 24,
+    paddingHorizontal: 18,
+    marginBottom: 14,
     alignItems: 'center',
   },
-  brand: {
-    fontSize: 42,
+  logo: {
+    width: 110,
+    height: 110,
+    marginBottom: 12,
+  },
+  brandTitle: {
+    color: '#F8F5EF',
+    fontSize: 34,
     fontWeight: '800',
-    letterSpacing: 0.3,
+    marginBottom: 6,
     textAlign: 'center',
   },
+  brandSubtitle: {
+    color: '#D7DEE8',
+    fontSize: 15,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+
+  // Form card
   card: {
     borderWidth: 1,
-    borderRadius: 20,
+    borderRadius: 12,
     padding: 20,
   },
   cardTitle: {
@@ -226,6 +289,8 @@ const styles = StyleSheet.create({
     marginBottom: 18,
     textAlign: 'center',
   },
+
+  // Inputs
   formGroup: {
     marginBottom: 14,
   },
@@ -241,9 +306,11 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     fontSize: 16,
   },
+
+  // Main button
   primaryButton: {
     minHeight: 52,
-    borderRadius: 14,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 8,
@@ -252,9 +319,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
+
+  // Secondary button
   secondaryButton: {
     minHeight: 50,
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -264,6 +333,8 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
+
+  // Login link
   linkButton: {
     alignItems: 'center',
     marginTop: 16,
@@ -271,7 +342,7 @@ const styles = StyleSheet.create({
   },
   linkText: {
     fontSize: 15,
-    fontWeight: '500',
+    fontWeight: '600',
     textAlign: 'center',
   },
 });

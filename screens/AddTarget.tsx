@@ -168,7 +168,7 @@ export default function AddTarget({ navigation, route }: any) {
               </Text>
 
               <Text style={[styles.formSubtitle, { color: palette.subtext }]}>
-                Choose a category, period, and target amount.
+                Choose a category, period and target amount.
               </Text>
 
               <TargetForm
