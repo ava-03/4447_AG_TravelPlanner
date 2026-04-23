@@ -30,18 +30,10 @@ function parseDate(value: string) {
   const parts = value.split('-');
 
   if (parts[0]?.length === 4) {
-    return new Date(
-      Number(parts[0]),
-      Number(parts[1]) - 1,
-      Number(parts[2])
-    );
+    return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
   }
 
-  return new Date(
-    Number(parts[2]),
-    Number(parts[1]) - 1,
-    Number(parts[0])
-  );
+  return new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
 }
 
 function formatDate(value: string) {
@@ -69,14 +61,8 @@ function getTripStatus(startDate: string, endDate: string) {
   const start = startOfDay(parseDate(startDate));
   const end = startOfDay(parseDate(endDate));
 
-  if (today < start) {
-    return 'Upcoming';
-  }
-
-  if (today > end) {
-    return 'Completed';
-  }
-
+  if (today < start) return 'Upcoming';
+  if (today > end) return 'Completed';
   return 'In Progress';
 }
 
@@ -103,11 +89,66 @@ function getTripCountdown(startDate: string, endDate: string) {
 }
 
 export default function Trips({ navigation }: any) {
-  const { colors, themeMode } = useTheme();
+  const { themeMode } = useTheme();
+
   const [trips, setTrips] = useState<Trip[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>('nearest');
   const [showSortMenu, setShowSortMenu] = useState(false);
 
+  // colour palette
+  const palette = themeMode === 'dark'
+    ? {
+        page: '#0F172A',
+        hero: '#132A46',
+        heroBorder: '#1F3D63',
+        surface: '#111C2D',
+        card: '#17263D',
+        border: '#28405F',
+        text: '#F8FAFC',
+        subtext: '#C7D2E0',
+        accent: '#D4A853',
+        primary: '#C4622D',
+        primaryText: '#FFFFFF',
+        upcomingBar: '#3B82F6',
+        upcomingBadgeBg: '#1E3A5F',
+        upcomingBadgeText: '#93C5FD',
+        progressBar: '#D4A853',
+        progressBadgeBg: '#4A3E18',
+        progressBadgeText: '#F7D774',
+        completedBar: '#94A3B8',
+        completedBadgeBg: '#334155',
+        completedBadgeText: '#E2E8F0',
+        tabBg: '#13233A',
+        tabActive: '#D4A853',
+        tabInactive: '#AAB7C8',
+      }
+    : {
+        page: '#F5F0E8',
+        hero: '#1A2E44',
+        heroBorder: '#1A2E44',
+        surface: '#FFFDF9',
+        card: '#FFFFFF',
+        border: '#DDD6CA',
+        text: '#18212B',
+        subtext: '#6B7280',
+        accent: '#D4A853',
+        primary: '#C4622D',
+        primaryText: '#FFFFFF',
+        upcomingBar: '#2563EB',
+        upcomingBadgeBg: '#DBEAFE',
+        upcomingBadgeText: '#1D4ED8',
+        progressBar: '#D4A853',
+        progressBadgeBg: '#FEF3C7',
+        progressBadgeText: '#92400E',
+        completedBar: '#9CA3AF',
+        completedBadgeBg: '#E5E7EB',
+        completedBadgeText: '#374151',
+        tabBg: '#FFFFFF',
+        tabActive: '#C4622D',
+        tabInactive: '#7A7A7A',
+      };
+
+  // Load trips when the screen is opened again
   const loadTrips = useCallback(async () => {
     const userId = await getCurrentUserId();
 
@@ -141,20 +182,19 @@ export default function Trips({ navigation }: any) {
     setShowSortMenu(false);
   }
 
+  // Sorting is kept here so the UI code stays readable
   const sortedTrips = useMemo(() => {
     const sorted = [...trips];
 
     if (sortBy === 'nearest') {
       sorted.sort(
-        (a, b) =>
-          parseDate(a.startDate).getTime() - parseDate(b.startDate).getTime()
+        (a, b) => parseDate(a.startDate).getTime() - parseDate(b.startDate).getTime()
       );
     }
 
     if (sortBy === 'furthest') {
       sorted.sort(
-        (a, b) =>
-          parseDate(b.startDate).getTime() - parseDate(a.startDate).getTime()
+        (a, b) => parseDate(b.startDate).getTime() - parseDate(a.startDate).getTime()
       );
     }
 
@@ -169,6 +209,7 @@ export default function Trips({ navigation }: any) {
     return sorted;
   }, [trips, sortBy]);
 
+  // Current + future trips
   const upcomingTrips = useMemo(() => {
     return sortedTrips.filter((trip) => {
       const status = getTripStatus(trip.startDate, trip.endDate);
@@ -176,6 +217,7 @@ export default function Trips({ navigation }: any) {
     });
   }, [sortedTrips]);
 
+  // Finished trips
   const pastTrips = useMemo(() => {
     return sortedTrips.filter((trip) => {
       const status = getTripStatus(trip.startDate, trip.endDate);
@@ -183,294 +225,489 @@ export default function Trips({ navigation }: any) {
     });
   }, [sortedTrips]);
 
+  function getTripVisuals(status: string) {
+    if (status === 'Upcoming') {
+      return {
+        topBar: palette.upcomingBar,
+        badgeBg: palette.upcomingBadgeBg,
+        badgeText: palette.upcomingBadgeText,
+      };
+    }
+
+    if (status === 'In Progress') {
+      return {
+        topBar: palette.progressBar,
+        badgeBg: palette.progressBadgeBg,
+        badgeText: palette.progressBadgeText,
+      };
+    }
+
+    return {
+      topBar: palette.completedBar,
+      badgeBg: palette.completedBadgeBg,
+      badgeText: palette.completedBadgeText,
+    };
+  }
+
   function renderTripCard(item: Trip) {
     const status = getTripStatus(item.startDate, item.endDate);
     const countdown = getTripCountdown(item.startDate, item.endDate);
-
-    const badgeBackground =
-      status === 'Upcoming'
-        ? themeMode === 'dark'
-          ? '#1e3a5f'
-          : '#dbeafe'
-        : status === 'In Progress'
-        ? themeMode === 'dark'
-          ? '#3f3a16'
-          : '#fef3c7'
-        : themeMode === 'dark'
-        ? '#1f2937'
-        : '#e5e7eb';
-
-    const badgeText =
-      status === 'Upcoming'
-        ? themeMode === 'dark'
-          ? '#93c5fd'
-          : '#1d4ed8'
-        : status === 'In Progress'
-        ? themeMode === 'dark'
-          ? '#fde68a'
-          : '#92400e'
-        : themeMode === 'dark'
-        ? '#d1d5db'
-        : '#374151';
+    const visuals = getTripVisuals(status);
 
     return (
       <Pressable
         key={item.id}
         style={[
-          styles.card,
+          styles.tripCard,
           {
-            backgroundColor: colors.card,
-            borderColor: colors.border,
+            backgroundColor: palette.card,
+            borderColor: palette.border,
           },
         ]}
-        onPress={() =>
-          navigation.navigate('TripDetails', {
-            tripId: item.id,
-          })
-        }
+        onPress={() => navigation.navigate('TripDetails', { tripId: item.id })}
+        accessibilityLabel={`Open trip ${item.name}`}
       >
-        <View style={styles.cardTopRow}>
-          <Text style={[styles.cardTitle, { color: colors.text }]}>{item.name}</Text>
+        <View style={[styles.tripBar, { backgroundColor: visuals.topBar }]} />
 
-          <View style={[styles.statusBadge, { backgroundColor: badgeBackground }]}>
-            <Text style={[styles.statusBadgeText, { color: badgeText }]}>{status}</Text>
+        <View style={styles.tripBody}>
+          <View style={styles.tripHeaderRow}>
+            <View style={styles.tripTitleWrap}>
+              <Text style={[styles.tripTitle, { color: palette.text }]} numberOfLines={1}>
+                {item.name}
+              </Text>
+              <Text style={[styles.tripDestination, { color: palette.subtext }]} numberOfLines={1}>
+                {item.destination}
+              </Text>
+            </View>
+
+            <View style={[styles.statusBadge, { backgroundColor: visuals.badgeBg }]}>
+              <Text style={[styles.statusBadgeText, { color: visuals.badgeText }]}>
+                {status}
+              </Text>
+            </View>
           </View>
-        </View>
 
-        <Text style={[styles.destination, { color: colors.subtext }]}>
-          {item.destination}
-        </Text>
-
-        <Text style={[styles.dateText, { color: colors.subtext }]}>
-          {formatDate(item.startDate)} → {formatDate(item.endDate)}
-        </Text>
-
-        <Text style={[styles.countdownText, { color: colors.accent }]}>
-          {countdown}
-        </Text>
-
-        {item.notes ? (
-          <Text style={[styles.notes, { color: colors.subtext }]} numberOfLines={2}>
-            {item.notes}
+          <Text style={[styles.tripDate, { color: palette.subtext }]}>
+            {formatDate(item.startDate)} → {formatDate(item.endDate)}
           </Text>
-        ) : null}
+
+          <Text style={[styles.tripCountdown, { color: palette.upcomingBar }]}>
+            {countdown}
+          </Text>
+
+          {item.notes ? (
+            <Text style={[styles.tripNotes, { color: palette.subtext }]} numberOfLines={2}>
+              {item.notes}
+            </Text>
+          ) : null}
+        </View>
       </Pressable>
     );
   }
 
   return (
     <ScreenContainer>
-      <View style={styles.headerRow}>
-        <Text style={[styles.title, { color: colors.text }]}>My Trips</Text>
-
-        <Pressable
-          style={[
-            styles.addButton,
-            { backgroundColor: colors.primary },
-          ]}
-          onPress={() => navigation.navigate('AddTrip')}
+      <View style={[styles.page, { backgroundColor: palette.page }]}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
         >
-          <Text style={[styles.addButtonText, { color: colors.primaryText }]}>
-            + Add Trip
-          </Text>
-        </Pressable>
-      </View>
-
-      <Pressable
-        style={[
-          styles.sortButton,
-          { backgroundColor: colors.card, borderColor: colors.border },
-        ]}
-        onPress={() => setShowSortMenu(true)}
-      >
-        <Text style={[styles.sortButtonLabel, { color: colors.subtext }]}>Sort by</Text>
-        <Text style={[styles.sortButtonValue, { color: colors.text }]}>
-          {getSortLabel()} ▾
-        </Text>
-      </Pressable>
-
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Upcoming Trips</Text>
-
-        {upcomingTrips.length === 0 ? (
+          {/* Top branding block */}
           <View
             style={[
-              styles.emptyCard,
-              { backgroundColor: colors.card, borderColor: colors.border },
+              styles.heroCard,
+              {
+                backgroundColor: palette.hero,
+                borderColor: palette.heroBorder,
+              },
             ]}
           >
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>No upcoming trips</Text>
-            <Text style={[styles.emptyText, { color: colors.subtext }]}>
-              Your future and current trips will appear here.
-            </Text>
+            <View style={styles.heroTopRow}>
+              <View
+                style={[
+                  styles.logoBox,
+                  {
+                    borderColor: themeMode === 'dark' ? '#315074' : '#2D415A',
+                    backgroundColor: themeMode === 'dark' ? '#1A3452' : '#22364D',
+                  },
+                ]}
+              >
+                <Text style={styles.logoBoxText}>Logo</Text>
+              </View>
+
+              <View style={styles.brandBlock}>
+                <Text style={[styles.brandName, { color: '#F8F5EF' }]}>Wanderly</Text>
+                <Text style={[styles.brandTagline, { color: '#D7DEE8' }]}>
+                  Plan. Pack. Explore.
+                </Text>
+              </View>
+            </View>
+
+            <Text style={[styles.screenHeading, { color: '#F8F5EF' }]}>My Trips</Text>
+
+            <View style={styles.statsRow}>
+              <View style={[styles.statCard, { backgroundColor: '#FBF8F3', borderColor: '#D9D2C7' }]}>
+                <Text style={[styles.statValue, { color: '#18212B' }]}>{upcomingTrips.length}</Text>
+                <Text style={[styles.statLabel, { color: '#6B7280' }]}>Upcoming</Text>
+              </View>
+
+              <View style={[styles.statCard, { backgroundColor: '#FBF8F3', borderColor: '#D9D2C7' }]}>
+                <Text style={[styles.statValue, { color: '#18212B' }]}>{pastTrips.length}</Text>
+                <Text style={[styles.statLabel, { color: '#6B7280' }]}>Past trips</Text>
+              </View>
+            </View>
           </View>
-        ) : (
-          upcomingTrips.map(renderTripCard)
-        )}
 
-        <Text style={[styles.sectionTitle, styles.pastTripsTitle, { color: colors.text }]}>
-          Past Trips
-        </Text>
-
-        {pastTrips.length === 0 ? (
-          <View
-            style={[
-              styles.emptyCard,
-              { backgroundColor: colors.card, borderColor: colors.border },
-            ]}
+          {/* Main trip action */}
+          <Pressable
+            style={[styles.addTripButton, { backgroundColor: palette.primary }]}
+            onPress={() => navigation.navigate('AddTrip')}
+            accessibilityLabel="Add a new trip"
           >
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>No past trips</Text>
-            <Text style={[styles.emptyText, { color: colors.subtext }]}>
-              Completed trips will appear here.
+            <Text style={[styles.addTripButtonText, { color: palette.primaryText }]}>
+              + Add Trip
+            </Text>
+          </Pressable>
+
+          {/* Small controls */}
+          <View style={styles.controlsRow}>
+            <Pressable
+              style={[
+                styles.sortButton,
+                { backgroundColor: palette.surface, borderColor: palette.border },
+              ]}
+              onPress={() => setShowSortMenu(true)}
+              accessibilityLabel="Open sort trips menu"
+            >
+              <Text style={[styles.controlLabel, { color: palette.subtext }]}>Sort</Text>
+              <Text style={[styles.controlValue, { color: palette.text }]}>
+                {getSortLabel()} ▾
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={[
+                styles.categoriesButton,
+                { backgroundColor: palette.surface, borderColor: palette.border },
+              ]}
+              onPress={() => navigation.navigate('Categories')}
+              accessibilityLabel="Open categories screen"
+            >
+              <Text style={[styles.categoriesButtonText, { color: palette.text }]}>
+                Categories
+              </Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: palette.text }]}>Upcoming Trips</Text>
+            <Text style={[styles.sectionCount, { color: palette.subtext }]}>
+              {upcomingTrips.length}
             </Text>
           </View>
-        ) : (
-          pastTrips.map(renderTripCard)
-        )}
-      </ScrollView>
 
-      <View style={styles.footerMenu}>
-        <Pressable
-          style={[
-            styles.menuButton,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
-          onPress={() => navigation.navigate('Categories')}
-        >
-          <Text style={[styles.menuText, { color: colors.text }]}>Categories</Text>
-        </Pressable>
+          {upcomingTrips.length === 0 ? (
+            <View
+              style={[
+                styles.emptyCard,
+                { backgroundColor: palette.card, borderColor: palette.border },
+              ]}
+            >
+              <Text style={[styles.emptyTitle, { color: palette.text }]}>No upcoming trips</Text>
+              <Text style={[styles.emptyText, { color: palette.subtext }]}>
+                Add a trip to start planning your next one.
+              </Text>
+            </View>
+          ) : (
+            upcomingTrips.map(renderTripCard)
+          )}
 
-        <Pressable
-          style={[
-            styles.menuButton,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
-          onPress={() => navigation.navigate('Insights')}
-        >
-          <Text style={[styles.menuText, { color: colors.text }]}>Insights</Text>
-        </Pressable>
+          <View style={[styles.sectionHeader, styles.sectionSpacing]}>
+            <Text style={[styles.sectionTitle, { color: palette.text }]}>Past Trips</Text>
+            <Text style={[styles.sectionCount, { color: palette.subtext }]}>
+              {pastTrips.length}
+            </Text>
+          </View>
 
-        <Pressable
+          {pastTrips.length === 0 ? (
+            <View
+              style={[
+                styles.emptyCard,
+                { backgroundColor: palette.card, borderColor: palette.border },
+              ]}
+            >
+              <Text style={[styles.emptyTitle, { color: palette.text }]}>No past trips</Text>
+              <Text style={[styles.emptyText, { color: palette.subtext }]}>
+                Completed trips will show here after they finish.
+              </Text>
+            </View>
+          ) : (
+            pastTrips.map(renderTripCard)
+          )}
+        </ScrollView>
+
+        {/* Bottom nav stays outside the scroll */}
+        <View
           style={[
-            styles.menuButton,
-            { backgroundColor: colors.card, borderColor: colors.border },
+            styles.tabBar,
+            {
+              backgroundColor: palette.tabBg,
+              borderColor: palette.border,
+            },
           ]}
-          onPress={() => navigation.navigate('Profile')}
         >
-          <Text style={[styles.menuText, { color: colors.text }]}>Profile</Text>
-        </Pressable>
+          <Pressable
+            style={styles.tabItem}
+            onPress={() => navigation.navigate('Trips')}
+            accessibilityLabel="Trips tab"
+          >
+            <Text style={[styles.tabDot, { color: palette.tabActive }]}>●</Text>
+            <Text style={[styles.tabTextActive, { color: palette.tabActive }]}>Trips</Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.tabItem}
+            onPress={() => navigation.navigate('Insights')}
+            accessibilityLabel="Insights tab"
+          >
+            <Text style={[styles.tabDot, { color: palette.tabInactive }]}>●</Text>
+            <Text style={[styles.tabText, { color: palette.tabInactive }]}>Insights</Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.tabItem}
+            onPress={() => navigation.navigate('Profile')}
+            accessibilityLabel="Profile tab"
+          >
+            <Text style={[styles.tabDot, { color: palette.tabInactive }]}>●</Text>
+            <Text style={[styles.tabText, { color: palette.tabInactive }]}>Profile</Text>
+          </Pressable>
+        </View>
+
+        <Modal
+          visible={showSortMenu}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowSortMenu(false)}
+        >
+          <Pressable style={styles.modalOverlay} onPress={() => setShowSortMenu(false)}>
+            <View
+              style={[
+                styles.modalCard,
+                {
+                  backgroundColor: palette.card,
+                  borderColor: palette.border,
+                },
+              ]}
+            >
+              <Text style={[styles.modalTitle, { color: palette.text }]}>Sort Trips</Text>
+
+              <Pressable
+                style={[styles.optionButton, { borderTopColor: palette.border }]}
+                onPress={() => chooseSort('nearest')}
+              >
+                <Text style={[styles.optionText, { color: palette.text }]}>Nearest Trip</Text>
+              </Pressable>
+
+              <Pressable
+                style={[styles.optionButton, { borderTopColor: palette.border }]}
+                onPress={() => chooseSort('furthest')}
+              >
+                <Text style={[styles.optionText, { color: palette.text }]}>Furthest Trip</Text>
+              </Pressable>
+
+              <Pressable
+                style={[styles.optionButton, { borderTopColor: palette.border }]}
+                onPress={() => chooseSort('recent')}
+              >
+                <Text style={[styles.optionText, { color: palette.text }]}>Recently Added</Text>
+              </Pressable>
+
+              <Pressable
+                style={[styles.optionButton, { borderTopColor: palette.border }]}
+                onPress={() => chooseSort('az')}
+              >
+                <Text style={[styles.optionText, { color: palette.text }]}>A-Z</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Modal>
       </View>
-
-      <Modal
-        visible={showSortMenu}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowSortMenu(false)}
-      >
-        <Pressable style={styles.modalOverlay} onPress={() => setShowSortMenu(false)}>
-          <View style={[styles.modalCard, { backgroundColor: colors.card }]}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Sort Trips</Text>
-
-            <Pressable
-              style={[styles.optionButton, { borderTopColor: colors.border }]}
-              onPress={() => chooseSort('nearest')}
-            >
-              <Text style={[styles.optionText, { color: colors.text }]}>Nearest Trip</Text>
-            </Pressable>
-
-            <Pressable
-              style={[styles.optionButton, { borderTopColor: colors.border }]}
-              onPress={() => chooseSort('furthest')}
-            >
-              <Text style={[styles.optionText, { color: colors.text }]}>Furthest Trip</Text>
-            </Pressable>
-
-            <Pressable
-              style={[styles.optionButton, { borderTopColor: colors.border }]}
-              onPress={() => chooseSort('recent')}
-            >
-              <Text style={[styles.optionText, { color: colors.text }]}>Recently Added</Text>
-            </Pressable>
-
-            <Pressable
-              style={[styles.optionButton, { borderTopColor: colors.border }]}
-              onPress={() => chooseSort('az')}
-            >
-              <Text style={[styles.optionText, { color: colors.text }]}>A-Z</Text>
-            </Pressable>
-          </View>
-        </Pressable>
-      </Modal>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  title: {
-    fontSize: 30,
-    fontWeight: '700',
+  page: {
+    flex: 1,
   },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 18,
-    gap: 12,
+
+  // Extra bottom padding so the last card doesn't get hidden behind the tab bar
+  scrollContent: {
+    paddingBottom: 110,
   },
-  addButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+
+  heroCard: {
+    borderWidth: 1,
     borderRadius: 12,
+    padding: 18,
+    marginBottom: 14,
   },
-  addButtonText: {
+  heroTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    marginBottom: 18,
+  },
+  logoBox: {
+    width: 92,
+    height: 92,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoBoxText: {
+    color: '#E5E7EB',
+    fontSize: 17,
     fontWeight: '600',
   },
+  brandBlock: {
+    flex: 1,
+  },
+  brandName: {
+    fontSize: 40,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  brandTagline: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  screenHeading: {
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 14,
+  },
+
+  statsRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  statCard: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+  },
+  statValue: {
+    fontSize: 26,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 15,
+    fontWeight: '500',
+  },
+
+  addTripButton: {
+    borderRadius: 12,
+    paddingVertical: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  addTripButtonText: {
+    fontSize: 17,
+    fontWeight: '700',
+  },
+
+  controlsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 18,
+  },
   sortButton: {
+    flex: 1.2,
+    borderWidth: 1,
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 14,
-    marginBottom: 16,
-    borderWidth: 1,
   },
-  sortButtonLabel: {
+  categoriesButton: {
+    flex: 0.9,
+    borderWidth: 1,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+  },
+  controlLabel: {
     fontSize: 13,
     marginBottom: 2,
   },
-  sortButtonValue: {
+  controlValue: {
     fontSize: 16,
-    fontWeight: '600',
-  },
-  scrollContent: {
-    paddingBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 22,
     fontWeight: '700',
+  },
+  categoriesButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 12,
   },
-  pastTripsTitle: {
-    marginTop: 10,
+  sectionSpacing: {
+    marginTop: 8,
   },
-  card: {
-    borderRadius: 18,
-    padding: 18,
-    marginBottom: 14,
+  sectionTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+  },
+  sectionCount: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+
+  tripCard: {
     borderWidth: 1,
+    borderRadius: 12,
+    marginBottom: 14,
+    overflow: 'hidden',
   },
-  cardTopRow: {
+  tripBar: {
+    height: 8,
+    width: '100%',
+  },
+  tripBody: {
+    padding: 16,
+  },
+  tripHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     gap: 10,
+    marginBottom: 6,
   },
-  cardTitle: {
+  tripTitleWrap: {
     flex: 1,
-    fontSize: 22,
-    fontWeight: '700',
+  },
+  tripTitle: {
+    fontSize: 21,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  tripDestination: {
+    fontSize: 16,
     marginBottom: 4,
   },
   statusBadge: {
-    borderRadius: 999,
+    borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
@@ -478,24 +715,22 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
-  destination: {
-    fontSize: 16,
-    marginBottom: 6,
-  },
-  dateText: {
+  tripDate: {
     fontSize: 15,
     marginBottom: 6,
   },
-  countdownText: {
+  tripCountdown: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '800',
     marginBottom: 6,
   },
-  notes: {
+  tripNotes: {
     fontSize: 14,
+    lineHeight: 20,
   },
+
   emptyCard: {
-    borderRadius: 18,
+    borderRadius: 12,
     padding: 20,
     borderWidth: 1,
     marginBottom: 14,
@@ -507,36 +742,50 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 15,
+    lineHeight: 22,
   },
-  footerMenu: {
+
+  // under the scroll layout so it stays fixed
+  tabBar: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
-    gap: 10,
-  },
-  menuButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
     alignItems: 'center',
     borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 12,
   },
-  menuText: {
+  tabItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+  },
+  tabDot: {
+    fontSize: 10,
+    lineHeight: 14,
+  },
+  tabText: {
+    fontSize: 13,
     fontWeight: '600',
   },
+  tabTextActive: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.25)',
+    backgroundColor: 'rgba(0,0,0,0.28)',
     justifyContent: 'center',
     paddingHorizontal: 24,
   },
   modalCard: {
-    borderRadius: 16,
+    borderRadius: 12,
     padding: 18,
+    borderWidth: 1,
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: '800',
     marginBottom: 12,
   },
   optionButton: {
