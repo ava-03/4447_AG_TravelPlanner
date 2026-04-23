@@ -19,6 +19,7 @@ import {
   getCategoryMapForUser,
 } from '../utils/activities';
 import { getCurrentUserId } from '../utils/authStorage';
+import { exportTripActivitiesToCsv } from '../utils/exportCsv';
 import { getTripInsights } from '../utils/insights';
 import {
   calculateTripTargetProgress,
@@ -210,6 +211,31 @@ export default function TripDetails({ navigation, route }: Props) {
     setStatusFilter('all');
   }
 
+  async function handleExportCsv() {
+    if (!trip) return;
+
+    try {
+      const exportRows = activities.map((activity) => ({
+        id: activity.id,
+        title: activity.title,
+        date: activity.date,
+        category: categoryMap[activity.categoryId] ?? 'Unknown',
+        metricValue: activity.metricValue,
+        metricUnit: activity.metricUnit,
+        status: activity.isCompleted === 1 ? 'Completed' : 'Not completed',
+        notes: activity.notes ?? '',
+      }));
+
+      await exportTripActivitiesToCsv(trip.name, exportRows);
+
+      Alert.alert('Success', 'Trip activities exported successfully.');
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to export CSV.';
+      Alert.alert('Export Error', message);
+    }
+  }
+
   function handleDeleteTrip() {
     if (!trip) return;
 
@@ -368,148 +394,157 @@ export default function TripDetails({ navigation, route }: Props) {
             </View>
 
             <View style={styles.tripActions}>
-  <View style={styles.primaryActionRow}>
-    <Pressable
-      style={[styles.actionCard, styles.primaryAction]}
-      onPress={() => navigation.navigate('AddActivity', { tripId: trip.id })}
-    >
-      <Text style={styles.primaryActionText}>+ Add Activity</Text>
-    </Pressable>
+              <View style={styles.primaryActionRow}>
+                <Pressable
+                  style={[styles.actionCard, styles.primaryAction]}
+                  onPress={() => navigation.navigate('AddActivity', { tripId: trip.id })}
+                >
+                  <Text style={styles.primaryActionText}>+ Add Activity</Text>
+                </Pressable>
 
-    <Pressable
-      style={[styles.actionCard, styles.primaryAction]}
-      onPress={() => navigation.navigate('AddTarget', { tripId: trip.id })}
-    >
-      <Text style={styles.primaryActionText}>+ Add Target</Text>
-    </Pressable>
-  </View>
+                <Pressable
+                  style={[styles.actionCard, styles.primaryAction]}
+                  onPress={() => navigation.navigate('AddTarget', { tripId: trip.id })}
+                >
+                  <Text style={styles.primaryActionText}>+ Add Target</Text>
+                </Pressable>
+              </View>
 
-  <View style={styles.secondaryActionRow}>
-    <Pressable
-      style={[styles.actionCard, styles.secondaryAction]}
-      onPress={() => navigation.navigate('EditTrip', { tripId: trip.id })}
-    >
-      <Text style={styles.secondaryActionText}>Edit Trip</Text>
-    </Pressable>
+              <View style={styles.secondaryActionRow}>
+                <Pressable
+                  style={[styles.actionCard, styles.secondaryAction]}
+                  onPress={() => navigation.navigate('EditTrip', { tripId: trip.id })}
+                >
+                  <Text style={styles.secondaryActionText}>Edit Trip</Text>
+                </Pressable>
 
-    <Pressable
-      style={[styles.actionCard, styles.deleteAction]}
-      onPress={handleDeleteTrip}
-    >
-      <Text style={styles.deleteActionText}>Delete Trip</Text>
-    </Pressable>
-  </View>
-</View>
+                <Pressable
+                  style={[styles.actionCard, styles.secondaryAction]}
+                  onPress={handleExportCsv}
+                >
+                  <Text style={styles.secondaryActionText}>Export CSV</Text>
+                </Pressable>
+              </View>
+
+              <View style={styles.deleteRow}>
+                <Pressable
+                  style={[styles.actionCard, styles.deleteAction]}
+                  onPress={handleDeleteTrip}
+                >
+                  <Text style={styles.deleteActionText}>Delete Trip</Text>
+                </Pressable>
+              </View>
+            </View>
 
             <Text style={styles.sectionTitle}>Activities</Text>
 
             <View style={styles.filtersCard}>
-  <TextInput
-    style={styles.input}
-    placeholder="Search activities"
-    value={searchText}
-    onChangeText={setSearchText}
-    accessibilityLabel="Search trip activities input"
-  />
+              <TextInput
+                style={styles.input}
+                placeholder="Search activities"
+                value={searchText}
+                onChangeText={setSearchText}
+                accessibilityLabel="Search trip activities input"
+              />
 
-  <Text style={styles.filterLabel}>Category</Text>
-  <View style={styles.filterChipsRow}>
-    <Pressable
-      style={[
-        styles.filterChip,
-        selectedCategoryId === null && styles.filterChipActive,
-      ]}
-      onPress={() => setSelectedCategoryId(null)}
-    >
-      <Text
-        style={[
-          styles.filterChipText,
-          selectedCategoryId === null && styles.filterChipTextActive,
-        ]}
-      >
-        All
-      </Text>
-    </Pressable>
+              <Text style={styles.filterLabel}>Category</Text>
+              <View style={styles.filterChipsRow}>
+                <Pressable
+                  style={[
+                    styles.filterChip,
+                    selectedCategoryId === null && styles.filterChipActive,
+                  ]}
+                  onPress={() => setSelectedCategoryId(null)}
+                >
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      selectedCategoryId === null && styles.filterChipTextActive,
+                    ]}
+                  >
+                    All
+                  </Text>
+                </Pressable>
 
-    {categoryOptions.map((category) => (
-      <Pressable
-        key={category.id}
-        style={[
-          styles.filterChip,
-          selectedCategoryId === category.id && styles.filterChipActive,
-        ]}
-        onPress={() => setSelectedCategoryId(category.id)}
-      >
-        <Text
-          style={[
-            styles.filterChipText,
-            selectedCategoryId === category.id && styles.filterChipTextActive,
-          ]}
-        >
-          {category.name}
-        </Text>
-      </Pressable>
-    ))}
-  </View>
+                {categoryOptions.map((category) => (
+                  <Pressable
+                    key={category.id}
+                    style={[
+                      styles.filterChip,
+                      selectedCategoryId === category.id && styles.filterChipActive,
+                    ]}
+                    onPress={() => setSelectedCategoryId(category.id)}
+                  >
+                    <Text
+                      style={[
+                        styles.filterChipText,
+                        selectedCategoryId === category.id && styles.filterChipTextActive,
+                      ]}
+                    >
+                      {category.name}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
 
-  <Text style={styles.filterLabel}>Status</Text>
-  <View style={styles.filterChipsRow}>
-    <Pressable
-      style={[
-        styles.filterChip,
-        statusFilter === 'all' && styles.filterChipActive,
-      ]}
-      onPress={() => setStatusFilter('all')}
-    >
-      <Text
-        style={[
-          styles.filterChipText,
-          statusFilter === 'all' && styles.filterChipTextActive,
-        ]}
-      >
-        All
-      </Text>
-    </Pressable>
+              <Text style={styles.filterLabel}>Status</Text>
+              <View style={styles.filterChipsRow}>
+                <Pressable
+                  style={[
+                    styles.filterChip,
+                    statusFilter === 'all' && styles.filterChipActive,
+                  ]}
+                  onPress={() => setStatusFilter('all')}
+                >
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      statusFilter === 'all' && styles.filterChipTextActive,
+                    ]}
+                  >
+                    All
+                  </Text>
+                </Pressable>
 
-    <Pressable
-      style={[
-        styles.filterChip,
-        statusFilter === 'completed' && styles.filterChipActive,
-      ]}
-      onPress={() => setStatusFilter('completed')}
-    >
-      <Text
-        style={[
-          styles.filterChipText,
-          statusFilter === 'completed' && styles.filterChipTextActive,
-        ]}
-      >
-        Completed
-      </Text>
-    </Pressable>
+                <Pressable
+                  style={[
+                    styles.filterChip,
+                    statusFilter === 'completed' && styles.filterChipActive,
+                  ]}
+                  onPress={() => setStatusFilter('completed')}
+                >
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      statusFilter === 'completed' && styles.filterChipTextActive,
+                    ]}
+                  >
+                    Completed
+                  </Text>
+                </Pressable>
 
-    <Pressable
-      style={[
-        styles.filterChip,
-        statusFilter === 'not_completed' && styles.filterChipActive,
-      ]}
-      onPress={() => setStatusFilter('not_completed')}
-    >
-      <Text
-        style={[
-          styles.filterChipText,
-          statusFilter === 'not_completed' && styles.filterChipTextActive,
-        ]}
-      >
-        Not Completed
-      </Text>
-    </Pressable>
-  </View>
+                <Pressable
+                  style={[
+                    styles.filterChip,
+                    statusFilter === 'not_completed' && styles.filterChipActive,
+                  ]}
+                  onPress={() => setStatusFilter('not_completed')}
+                >
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      statusFilter === 'not_completed' && styles.filterChipTextActive,
+                    ]}
+                  >
+                    Not Completed
+                  </Text>
+                </Pressable>
+              </View>
 
-  <Pressable style={styles.clearFiltersButton} onPress={clearActivityFilters}>
-    <Text style={styles.clearFiltersText}>Clear Filters</Text>
-  </Pressable>
-</View>
+              <Pressable style={styles.clearFiltersButton} onPress={clearActivityFilters}>
+                <Text style={styles.clearFiltersText}>Clear Filters</Text>
+              </Pressable>
+            </View>
           </>
         }
         ListEmptyComponent={
@@ -588,62 +623,56 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   tripActions: {
-  marginBottom: 22,
-  gap: 10,
-},
-
-primaryActionRow: {
-  flexDirection: 'row',
-  gap: 10,
-},
-
-secondaryActionRow: {
-  flexDirection: 'row',
-  gap: 10,
-},
-
-actionCard: {
-  flex: 1,
-  borderRadius: 14,
-  paddingVertical: 14,
-  paddingHorizontal: 12,
-  alignItems: 'center',
-  justifyContent: 'center',
-  borderWidth: 1,
-},
-
-primaryAction: {
-  backgroundColor: '#111',
-  borderColor: '#111',
-},
-
-primaryActionText: {
-  color: '#fff',
-  fontSize: 15,
-  fontWeight: '700',
-},
-
-secondaryAction: {
-  backgroundColor: '#fff',
-  borderColor: '#d1d5db',
-},
-
-secondaryActionText: {
-  color: '#2563eb',
-  fontSize: 15,
-  fontWeight: '700',
-},
-
-deleteAction: {
-  backgroundColor: '#fff',
-  borderColor: '#d1d5db',
-},
-
-deleteActionText: {
-  color: '#dc2626',
-  fontSize: 15,
-  fontWeight: '700',
-},
+    marginBottom: 22,
+    gap: 10,
+  },
+  primaryActionRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  secondaryActionRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  deleteRow: {
+    flexDirection: 'row',
+  },
+  actionCard: {
+    flex: 1,
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  primaryAction: {
+    backgroundColor: '#111',
+    borderColor: '#111',
+  },
+  primaryActionText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  secondaryAction: {
+    backgroundColor: '#fff',
+    borderColor: '#d1d5db',
+  },
+  secondaryActionText: {
+    color: '#2563eb',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  deleteAction: {
+    backgroundColor: '#fff',
+    borderColor: '#d1d5db',
+  },
+  deleteActionText: {
+    color: '#dc2626',
+    fontSize: 15,
+    fontWeight: '700',
+  },
   sectionTitle: {
     fontSize: 24,
     fontWeight: '700',
@@ -668,52 +697,45 @@ deleteActionText: {
     backgroundColor: '#fff',
   },
   filterLabel: {
-  fontSize: 14,
-  fontWeight: '600',
-  color: '#555',
-  marginBottom: -4,
-},
-
-filterChipsRow: {
-  flexDirection: 'row',
-  flexWrap: 'wrap',
-  gap: 8,
-},
-
-filterChip: {
-  paddingHorizontal: 12,
-  paddingVertical: 8,
-  borderRadius: 999,
-  backgroundColor: '#f3f4f6',
-  borderWidth: 1,
-  borderColor: '#e5e7eb',
-},
-
-filterChipActive: {
-  backgroundColor: '#111',
-  borderColor: '#111',
-},
-
-filterChipText: {
-  fontSize: 14,
-  color: '#333',
-  fontWeight: '500',
-},
-
-filterChipTextActive: {
-  color: '#fff',
-},
-
-clearFiltersButton: {
-  alignSelf: 'flex-start',
-  marginTop: 4,
-},
-
-clearFiltersText: {
-  color: '#2563eb',
-  fontSize: 15,
-  fontWeight: '600',
-},
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#555',
+    marginBottom: -4,
+  },
+  filterChipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  filterChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: '#f3f4f6',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  filterChipActive: {
+    backgroundColor: '#111',
+    borderColor: '#111',
+  },
+  filterChipText: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+  },
+  filterChipTextActive: {
+    color: '#fff',
+  },
+  clearFiltersButton: {
+    alignSelf: 'flex-start',
+    marginTop: 4,
+  },
+  clearFiltersText: {
+    color: '#2563eb',
+    fontSize: 15,
+    fontWeight: '600',
+  },
   activityCard: {
     backgroundColor: '#fff',
     borderWidth: 1,
