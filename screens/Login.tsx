@@ -1,6 +1,17 @@
 import { useState } from 'react';
-import { Alert, Button, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import ScreenContainer from '../components/ScreenContainer';
+import { useTheme } from '../theme/ThemeContext';
 import { loginUser } from '../utils/auth';
 import { setCurrentUserId } from '../utils/authStorage';
 
@@ -9,6 +20,8 @@ type Props = {
 };
 
 export default function Login({ navigation }: Props) {
+  const { colors, themeMode } = useTheme();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -22,7 +35,11 @@ export default function Login({ navigation }: Props) {
         return;
       }
 
-      const user = await loginUser({ email, password });
+      const user = await loginUser({
+        email: email.trim(),
+        password: password.trim(),
+      });
+
       await setCurrentUserId(user.id);
 
       navigation.reset({
@@ -40,64 +57,172 @@ export default function Login({ navigation }: Props) {
 
   return (
     <ScreenContainer>
-      <View style={styles.container}>
-        <Text style={styles.title}>Trip Planner</Text>
-        <Text style={styles.subtitle}>Login</Text>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.container}>
+          <View style={styles.hero}>
+            <Text style={[styles.brand, { color: colors.text }]}>Brand</Text>
+          </View>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          accessibilityLabel="Email input"
-        />
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+              },
+            ]}
+          >
+            <Text style={[styles.cardTitle, { color: colors.text }]}>Login</Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          accessibilityLabel="Password input"
-        />
+            <View style={styles.formGroup}>
+              <Text style={[styles.label, { color: colors.text }]}>Email</Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: colors.input,
+                    borderColor: colors.border,
+                    color: colors.text,
+                  },
+                ]}
+                placeholder="Enter your email"
+                placeholderTextColor={colors.placeholder}
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                accessibilityLabel="Email input"
+              />
+            </View>
 
-        <View style={styles.buttonSpacing}>
-          <Button title={loading ? 'Logging in...' : 'Login'} onPress={handleLogin} disabled={loading} />
+            <View style={styles.formGroup}>
+              <Text style={[styles.label, { color: colors.text }]}>Password</Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: colors.input,
+                    borderColor: colors.border,
+                    color: colors.text,
+                  },
+                ]}
+                placeholder="Enter your password"
+                placeholderTextColor={colors.placeholder}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                accessibilityLabel="Password input"
+              />
+            </View>
+
+            <Pressable
+              style={[
+                styles.primaryButton,
+                {
+                  backgroundColor: colors.accent,
+                  opacity: loading ? 0.7 : 1,
+                },
+              ]}
+              onPress={handleLogin}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color={themeMode === 'dark' ? '#0f1115' : '#ffffff'} />
+              ) : (
+                <Text
+                  style={[
+                    styles.primaryButtonText,
+                    { color: themeMode === 'dark' ? '#0f1115' : '#ffffff' },
+                  ]}
+                >
+                  Login
+                </Text>
+              )}
+            </Pressable>
+
+            <Pressable
+              style={styles.linkButton}
+              onPress={() => navigation.navigate('Register')}
+              disabled={loading}
+            >
+              <Text style={[styles.linkText, { color: colors.accent }]}>
+                Don&apos;t have an account? Register
+              </Text>
+            </Pressable>
+          </View>
         </View>
-
-        <Button title="Go to Register" onPress={() => navigation.navigate('Register')} />
-      </View>
+      </KeyboardAvoidingView>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     justifyContent: 'center',
-    gap: 14,
+    paddingVertical: 24,
   },
-  title: {
-    fontSize: 32,
+  hero: {
+    marginBottom: 24,
+    alignItems: 'center',
+  },
+  brand: {
+    fontSize: 42,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    textAlign: 'center',
+  },
+  card: {
+    borderWidth: 1,
+    borderRadius: 20,
+    padding: 20,
+  },
+  cardTitle: {
+    fontSize: 28,
     fontWeight: '700',
+    marginBottom: 18,
+    textAlign: 'center',
   },
-  subtitle: {
-    fontSize: 18,
+  formGroup: {
+    marginBottom: 14,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
     marginBottom: 8,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 10,
+    borderRadius: 12,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 14,
     fontSize: 16,
-    backgroundColor: '#fff',
   },
-  buttonSpacing: {
+  primaryButton: {
+    minHeight: 52,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 8,
-    marginBottom: 8,
+  },
+  primaryButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  linkButton: {
+    alignItems: 'center',
+    marginTop: 18,
+    paddingTop: 4,
+  },
+  linkText: {
+    fontSize: 15,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
