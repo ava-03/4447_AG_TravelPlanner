@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 
 import ScreenContainer from '../components/ScreenContainer';
+import { useTheme } from '../theme/ThemeContext';
 import { getCurrentUserId } from '../utils/authStorage';
 import { getTripsByUserId } from '../utils/trips';
 
@@ -26,6 +27,7 @@ type Trip = {
 };
 
 export default function Trips({ navigation }: any) {
+  const { colors } = useTheme();
   const [trips, setTrips] = useState<Trip[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>('nearest');
   const [showSortMenu, setShowSortMenu] = useState(false);
@@ -117,22 +119,28 @@ export default function Trips({ navigation }: any) {
   return (
     <ScreenContainer>
       <View style={styles.headerRow}>
-        <Text style={styles.title}>My Trips</Text>
+        <Text style={[styles.title, { color: colors.text }]}>My Trips</Text>
 
         <Pressable
-          style={styles.addButton}
+          style={[
+            styles.addButton,
+            { backgroundColor: colors.primary },
+          ]}
           onPress={() => navigation.navigate('AddTrip')}
         >
-          <Text style={styles.addButtonText}>+ Add Trip</Text>
+          <Text style={[styles.addButtonText, { color: colors.primaryText }]}>+ Add Trip</Text>
         </Pressable>
       </View>
 
       <Pressable
-        style={styles.sortButton}
+        style={[
+          styles.sortButton,
+          { backgroundColor: colors.card, borderColor: colors.border },
+        ]}
         onPress={() => setShowSortMenu(true)}
       >
-        <Text style={styles.sortButtonLabel}>Sort by</Text>
-        <Text style={styles.sortButtonValue}>{getSortLabel()} ▾</Text>
+        <Text style={[styles.sortButtonLabel, { color: colors.subtext }]}>Sort by</Text>
+        <Text style={[styles.sortButtonValue, { color: colors.text }]}>{getSortLabel()} ▾</Text>
       </Pressable>
 
       <FlatList
@@ -141,30 +149,30 @@ export default function Trips({ navigation }: any) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>No trips yet</Text>
-            <Text style={styles.emptyText}>
+          <View style={[styles.emptyCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>No trips yet</Text>
+            <Text style={[styles.emptyText, { color: colors.subtext }]}>
               Tap Add Trip to create your first trip.
             </Text>
           </View>
         }
         renderItem={({ item }) => (
           <Pressable
-            style={styles.card}
+            style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
             onPress={() =>
               navigation.navigate('TripDetails', {
                 tripId: item.id,
               })
             }
           >
-            <Text style={styles.cardTitle}>{item.name}</Text>
-            <Text style={styles.destination}>{item.destination}</Text>
-            <Text style={styles.dateText}>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>{item.name}</Text>
+            <Text style={[styles.destination, { color: colors.subtext }]}>{item.destination}</Text>
+            <Text style={[styles.dateText, { color: colors.subtext }]}>
               {formatDate(item.startDate)} → {formatDate(item.endDate)}
             </Text>
 
             {item.notes ? (
-              <Text style={styles.notes} numberOfLines={2}>
+              <Text style={[styles.notes, { color: colors.subtext }]} numberOfLines={2}>
                 {item.notes}
               </Text>
             ) : null}
@@ -174,24 +182,24 @@ export default function Trips({ navigation }: any) {
 
       <View style={styles.footerMenu}>
         <Pressable
-          style={styles.menuButton}
+          style={[styles.menuButton, { backgroundColor: colors.card, borderColor: colors.border }]}
           onPress={() => navigation.navigate('Categories')}
         >
-          <Text style={styles.menuText}>Categories</Text>
+          <Text style={[styles.menuText, { color: colors.text }]}>Categories</Text>
         </Pressable>
 
         <Pressable
-          style={styles.menuButton}
+          style={[styles.menuButton, { backgroundColor: colors.card, borderColor: colors.border }]}
           onPress={() => navigation.navigate('Insights')}
         >
-          <Text style={styles.menuText}>Insights</Text>
+          <Text style={[styles.menuText, { color: colors.text }]}>Insights</Text>
         </Pressable>
 
         <Pressable
-          style={styles.menuButton}
+          style={[styles.menuButton, { backgroundColor: colors.card, borderColor: colors.border }]}
           onPress={() => navigation.navigate('Profile')}
         >
-          <Text style={styles.menuText}>Profile</Text>
+          <Text style={[styles.menuText, { color: colors.text }]}>Profile</Text>
         </Pressable>
       </View>
 
@@ -205,35 +213,23 @@ export default function Trips({ navigation }: any) {
           style={styles.modalOverlay}
           onPress={() => setShowSortMenu(false)}
         >
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Sort Trips</Text>
+          <View style={[styles.modalCard, { backgroundColor: colors.card }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Sort Trips</Text>
 
-            <Pressable
-              style={styles.optionButton}
-              onPress={() => chooseSort('nearest')}
-            >
-              <Text style={styles.optionText}>Nearest Trip</Text>
+            <Pressable style={[styles.optionButton, { borderTopColor: colors.border }]} onPress={() => chooseSort('nearest')}>
+              <Text style={[styles.optionText, { color: colors.text }]}>Nearest Trip</Text>
             </Pressable>
 
-            <Pressable
-              style={styles.optionButton}
-              onPress={() => chooseSort('furthest')}
-            >
-              <Text style={styles.optionText}>Furthest Trip</Text>
+            <Pressable style={[styles.optionButton, { borderTopColor: colors.border }]} onPress={() => chooseSort('furthest')}>
+              <Text style={[styles.optionText, { color: colors.text }]}>Furthest Trip</Text>
             </Pressable>
 
-            <Pressable
-              style={styles.optionButton}
-              onPress={() => chooseSort('recent')}
-            >
-              <Text style={styles.optionText}>Recently Added</Text>
+            <Pressable style={[styles.optionButton, { borderTopColor: colors.border }]} onPress={() => chooseSort('recent')}>
+              <Text style={[styles.optionText, { color: colors.text }]}>Recently Added</Text>
             </Pressable>
 
-            <Pressable
-              style={styles.optionButton}
-              onPress={() => chooseSort('az')}
-            >
-              <Text style={styles.optionText}>A-Z</Text>
+            <Pressable style={[styles.optionButton, { borderTopColor: colors.border }]} onPress={() => chooseSort('az')}>
+              <Text style={[styles.optionText, { color: colors.text }]}>A-Z</Text>
             </Pressable>
           </View>
         </Pressable>
@@ -243,151 +239,28 @@ export default function Trips({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  title: {
-    fontSize: 30,
-    fontWeight: '700',
-  },
-
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 18,
-    gap: 12,
-  },
-
-  addButton: {
-    backgroundColor: '#111',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
-
-  addButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-
-  sortButton: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    marginBottom: 16,
-  },
-
-  sortButtonLabel: {
-    fontSize: 13,
-    color: '#666',
-    marginBottom: 2,
-  },
-
-  sortButtonValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111',
-  },
-
-  listContent: {
-    paddingBottom: 30,
-  },
-
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 18,
-    padding: 18,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: '#e2e2e2',
-  },
-
-  cardTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-
-  destination: {
-    fontSize: 16,
-    color: '#444',
-    marginBottom: 6,
-  },
-
-  dateText: {
-    fontSize: 15,
-    color: '#666',
-    marginBottom: 6,
-  },
-
-  notes: {
-    color: '#777',
-    fontSize: 14,
-  },
-
-  emptyCard: {
-    backgroundColor: '#fff',
-    borderRadius: 18,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#e2e2e2',
-  },
-
-  emptyTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    marginBottom: 6,
-  },
-
-  emptyText: {
-    color: '#666',
-  },
-
-  footerMenu: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
-    gap: 10,
-  },
-
-  menuButton: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-
-  menuText: {
-    fontWeight: '600',
-  },
-
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.25)',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-
-  modalCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 18,
-  },
-
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 12,
-  },
-
-  optionButton: {
-    paddingVertical: 14,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-  },
-
-  optionText: {
-    fontSize: 16,
-    color: '#111',
-  },
+  title: { fontSize: 30, fontWeight: '700' },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, gap: 12 },
+  addButton: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 },
+  addButtonText: { fontWeight: '600' },
+  sortButton: { borderRadius: 12, paddingVertical: 12, paddingHorizontal: 14, marginBottom: 16, borderWidth: 1 },
+  sortButtonLabel: { fontSize: 13, marginBottom: 2 },
+  sortButtonValue: { fontSize: 16, fontWeight: '600' },
+  listContent: { paddingBottom: 30 },
+  card: { borderRadius: 18, padding: 18, marginBottom: 14, borderWidth: 1 },
+  cardTitle: { fontSize: 22, fontWeight: '700', marginBottom: 4 },
+  destination: { fontSize: 16, marginBottom: 6 },
+  dateText: { fontSize: 15, marginBottom: 6 },
+  notes: { fontSize: 14 },
+  emptyCard: { borderRadius: 18, padding: 20, borderWidth: 1 },
+  emptyTitle: { fontSize: 22, fontWeight: '700', marginBottom: 6 },
+  emptyText: {},
+  footerMenu: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8, gap: 10 },
+  menuButton: { flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center', borderWidth: 1 },
+  menuText: { fontWeight: '600' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.25)', justifyContent: 'center', paddingHorizontal: 24 },
+  modalCard: { borderRadius: 16, padding: 18 },
+  modalTitle: { fontSize: 20, fontWeight: '700', marginBottom: 12 },
+  optionButton: { paddingVertical: 14, borderTopWidth: 1 },
+  optionText: { fontSize: 16 },
 });

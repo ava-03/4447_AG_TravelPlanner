@@ -1,10 +1,10 @@
-import { Picker } from '@react-native-picker/picker';
-import { Dimensions, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { BarChart } from 'react-native-chart-kit';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback, useMemo, useState } from 'react';
 
 import ScreenContainer from '../components/ScreenContainer';
+import { useTheme } from '../theme/ThemeContext';
 import { getCurrentUserId } from '../utils/authStorage';
 import { getActivitiesByUserId, getCategoriesForUser } from '../utils/activities';
 import { getTripsByUserId } from '../utils/trips';
@@ -109,6 +109,7 @@ function matchesRange(date: Date, base: Date, range: InsightRange) {
 }
 
 export default function Insights({ navigation }: any) {
+  const { colors, themeMode } = useTheme();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [trips, setTrips] = useState<Trip[]>([]);
@@ -152,15 +153,8 @@ export default function Insights({ navigation }: any) {
     );
 
     const totalTrips = filteredTrips.length;
-
-    const completedTrips = filteredTrips.filter(
-      (trip) => parseDate(trip.endDate) < now
-    ).length;
-
-    const upcomingTrips = filteredTrips.filter(
-      (trip) => parseDate(trip.startDate) > now
-    ).length;
-
+    const completedTrips = filteredTrips.filter((trip) => parseDate(trip.endDate) < now).length;
+    const upcomingTrips = filteredTrips.filter((trip) => parseDate(trip.startDate) > now).length;
     const activeTrips = filteredTrips.filter((trip) => {
       const start = parseDate(trip.startDate);
       const end = parseDate(trip.endDate);
@@ -172,7 +166,6 @@ export default function Insights({ navigation }: any) {
     );
 
     const totalActivities = filteredActivities.length;
-
     const totalMinutes = filteredActivities
       .filter((activity) => activity.metricUnit === 'minutes')
       .reduce((sum, activity) => sum + activity.metricValue, 0);
@@ -191,23 +184,18 @@ export default function Insights({ navigation }: any) {
       .filter((activity) => activity.metricUnit === 'minutes')
       .forEach((activity) => {
         const categoryName = categoryMap[activity.categoryId] ?? 'Unknown';
-
         if (!minutesByCategoryMap[categoryName]) {
           minutesByCategoryMap[categoryName] = 0;
         }
-
         minutesByCategoryMap[categoryName] += activity.metricValue;
       });
 
-    const minutesByCategory = Object.entries(minutesByCategoryMap).map(
-      ([name, minutes]) => ({
-        name,
-        minutes,
-      })
-    );
+    const minutesByCategory = Object.entries(minutesByCategoryMap).map(([name, minutes]) => ({
+      name,
+      minutes,
+    }));
 
     let topCategory = 'None';
-
     if (minutesByCategory.length > 0) {
       const sorted = [...minutesByCategory].sort((a, b) => b.minutes - a.minutes);
       topCategory = sorted[0].name;
@@ -242,139 +230,105 @@ export default function Insights({ navigation }: any) {
   return (
     <ScreenContainer>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Overall Insights</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Overall Insights</Text>
 
-        <View style={styles.filterCard}>
-  <Text style={styles.filterLabel}>Time Range</Text>
+        <View
+          style={[
+            styles.filterCard,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
+          <Text style={[styles.filterLabel, { color: colors.subtext }]}>Time Range</Text>
 
-  <View style={styles.rangeRow}>
-    <Pressable
-      style={[
-        styles.rangeChip,
-        range === 'daily' && styles.rangeChipActive,
-      ]}
-      onPress={() => setRange('daily')}
-    >
-      <Text
-        style={[
-          styles.rangeChipText,
-          range === 'daily' && styles.rangeChipTextActive,
-        ]}
-      >
-        Daily
-      </Text>
-    </Pressable>
-
-    <Pressable
-      style={[
-        styles.rangeChip,
-        range === 'weekly' && styles.rangeChipActive,
-      ]}
-      onPress={() => setRange('weekly')}
-    >
-      <Text
-        style={[
-          styles.rangeChipText,
-          range === 'weekly' && styles.rangeChipTextActive,
-        ]}
-      >
-        Weekly
-      </Text>
-    </Pressable>
-
-    <Pressable
-      style={[
-        styles.rangeChip,
-        range === 'monthly' && styles.rangeChipActive,
-      ]}
-      onPress={() => setRange('monthly')}
-    >
-      <Text
-        style={[
-          styles.rangeChipText,
-          range === 'monthly' && styles.rangeChipTextActive,
-        ]}
-      >
-        Monthly
-      </Text>
-    </Pressable>
-
-    <Pressable
-      style={[
-        styles.rangeChip,
-        range === 'yearly' && styles.rangeChipActive,
-      ]}
-      onPress={() => setRange('yearly')}
-    >
-      <Text
-        style={[
-          styles.rangeChipText,
-          range === 'yearly' && styles.rangeChipTextActive,
-        ]}
-      >
-        Yearly
-      </Text>
-    </Pressable>
-  </View>
-</View>
+          <View style={styles.rangeRow}>
+            {(['daily', 'weekly', 'monthly', 'yearly'] as InsightRange[]).map((item) => (
+              <Pressable
+                key={item}
+                style={[
+                  styles.rangeChip,
+                  {
+                    backgroundColor: colors.chip,
+                    borderColor: colors.border,
+                  },
+                  range === item && {
+                    backgroundColor: colors.chipActive,
+                    borderColor: colors.chipActive,
+                  },
+                ]}
+                onPress={() => setRange(item)}
+              >
+                <Text
+                  style={[
+                    styles.rangeChipText,
+                    { color: colors.chipText },
+                    range === item && { color: colors.chipTextActive },
+                  ]}
+                >
+                  {item.charAt(0).toUpperCase() + item.slice(1)}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
 
         {loading ? (
-          <Text style={styles.loadingText}>Loading insights...</Text>
+          <Text style={[styles.loadingText, { color: colors.subtext }]}>Loading insights...</Text>
         ) : (
           <>
-            <Text style={styles.sectionTitle}>{getRangeTitle()}</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{getRangeTitle()}</Text>
 
-            <Text style={styles.subheading}>Trips</Text>
+            <Text style={[styles.subheading, { color: colors.text }]}>Trips</Text>
             <View style={styles.statsGrid}>
-              <View style={styles.statCard}>
-                <Text style={styles.statValue}>{summary.totalTrips}</Text>
-                <Text style={styles.statLabel}>Total Trips</Text>
-              </View>
-
-              <View style={styles.statCard}>
-                <Text style={styles.statValue}>{summary.completedTrips}</Text>
-                <Text style={styles.statLabel}>Completed Trips</Text>
-              </View>
-
-              <View style={styles.statCard}>
-                <Text style={styles.statValue}>{summary.activeTrips}</Text>
-                <Text style={styles.statLabel}>Active Trips</Text>
-              </View>
-
-              <View style={styles.statCard}>
-                <Text style={styles.statValue}>{summary.upcomingTrips}</Text>
-                <Text style={styles.statLabel}>Upcoming Trips</Text>
-              </View>
+              {[
+                { value: summary.totalTrips, label: 'Total Trips' },
+                { value: summary.completedTrips, label: 'Completed Trips' },
+                { value: summary.activeTrips, label: 'Active Trips' },
+                { value: summary.upcomingTrips, label: 'Upcoming Trips' },
+              ].map((item) => (
+                <View
+                  key={item.label}
+                  style={[
+                    styles.statCard,
+                    { backgroundColor: colors.card, borderColor: colors.border },
+                  ]}
+                >
+                  <Text style={[styles.statValue, { color: colors.text }]}>{item.value}</Text>
+                  <Text style={[styles.statLabel, { color: colors.subtext }]}>{item.label}</Text>
+                </View>
+              ))}
             </View>
 
-            <Text style={styles.subheading}>Activities</Text>
+            <Text style={[styles.subheading, { color: colors.text }]}>Activities</Text>
             <View style={styles.statsGrid}>
-              <View style={styles.statCard}>
-                <Text style={styles.statValue}>{summary.totalActivities}</Text>
-                <Text style={styles.statLabel}>Activities</Text>
-              </View>
-
-              <View style={styles.statCard}>
-                <Text style={styles.statValue}>{summary.totalMinutes}</Text>
-                <Text style={styles.statLabel}>Minutes</Text>
-              </View>
-
-              <View style={styles.statCard}>
-                <Text style={styles.statValue}>{summary.completedActivities}</Text>
-                <Text style={styles.statLabel}>Completed Activities</Text>
-              </View>
-
-              <View style={styles.statCard}>
-                <Text style={styles.statValue}>{summary.topCategory}</Text>
-                <Text style={styles.statLabel}>Top Category</Text>
-              </View>
+              {[
+                { value: summary.totalActivities, label: 'Activities' },
+                { value: summary.totalMinutes, label: 'Minutes' },
+                { value: summary.completedActivities, label: 'Completed Activities' },
+                { value: summary.topCategory, label: 'Top Category' },
+              ].map((item) => (
+                <View
+                  key={item.label}
+                  style={[
+                    styles.statCard,
+                    { backgroundColor: colors.card, borderColor: colors.border },
+                  ]}
+                >
+                  <Text style={[styles.statValue, { color: colors.text }]}>{item.value}</Text>
+                  <Text style={[styles.statLabel, { color: colors.subtext }]}>{item.label}</Text>
+                </View>
+              ))}
             </View>
 
-            <View style={styles.chartCard}>
-              <Text style={styles.chartTitle}>Minutes by Category</Text>
+            <View
+              style={[
+                styles.chartCard,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
+            >
+              <Text style={[styles.chartTitle, { color: colors.text }]}>Minutes by Category</Text>
 
               {summary.minutesByCategory.length === 0 ? (
-                <Text style={styles.emptyText}>
+                <Text style={[styles.emptyText, { color: colors.subtext }]}>
                   No activity data available for this time range.
                 </Text>
               ) : (
@@ -390,11 +344,17 @@ export default function Insights({ navigation }: any) {
                   fromZero
                   showValuesOnTopOfBars
                   chartConfig={{
-                    backgroundGradientFrom: '#ffffff',
-                    backgroundGradientTo: '#ffffff',
+                    backgroundGradientFrom: colors.card,
+                    backgroundGradientTo: colors.card,
                     decimalPlaces: 0,
-                    color: (opacity = 1) => `rgba(37, 99, 235, ${opacity})`,
-                    labelColor: (opacity = 1) => `rgba(17, 24, 39, ${opacity})`,
+                    color: (opacity = 1) =>
+                      themeMode === 'dark'
+                        ? `rgba(96, 165, 250, ${opacity})`
+                        : `rgba(37, 99, 235, ${opacity})`,
+                    labelColor: (opacity = 1) =>
+                      themeMode === 'dark'
+                        ? `rgba(245, 247, 250, ${opacity})`
+                        : `rgba(17, 24, 39, ${opacity})`,
                     barPercentage: 0.55,
                   }}
                   style={styles.chart}
@@ -410,113 +370,22 @@ export default function Insights({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  content: {
-    paddingBottom: 32,
-  },
-  title: {
-    fontSize: 30,
-    fontWeight: '700',
-    marginBottom: 18,
-  },
-  filterCard: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 18,
-  },
-  filterLabel: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 6,
-    fontWeight: '600',
-  },
-rangeRow: {
-  flexDirection: 'row',
-  flexWrap: 'wrap',
-  gap: 8,
-},
-
-rangeChip: {
-  paddingHorizontal: 14,
-  paddingVertical: 10,
-  borderRadius: 999,
-  backgroundColor: '#f3f4f6',
-  borderWidth: 1,
-  borderColor: '#e5e7eb',
-},
-
-rangeChipActive: {
-  backgroundColor: '#111',
-  borderColor: '#111',
-},
-
-rangeChipText: {
-  fontSize: 14,
-  fontWeight: '600',
-  color: '#333',
-},
-
-rangeChipTextActive: {
-  color: '#fff',
-},
-  loadingText: {
-    fontSize: 16,
-    color: '#666',
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 14,
-  },
-  subheading: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 12,
-    marginTop: 4,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 12,
-    marginBottom: 18,
-  },
-  statCard: {
-    width: '47%',
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 14,
-    padding: 16,
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 14,
-    color: '#666',
-  },
-  chartCard: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 14,
-    padding: 16,
-  },
-  chartTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 12,
-  },
-  chart: {
-    borderRadius: 12,
-  },
-  emptyText: {
-    fontSize: 15,
-    color: '#666',
-  },
+  content: { paddingBottom: 32 },
+  title: { fontSize: 30, fontWeight: '700', marginBottom: 18 },
+  filterCard: { borderWidth: 1, borderRadius: 14, padding: 14, marginBottom: 18 },
+  filterLabel: { fontSize: 14, marginBottom: 8, fontWeight: '600' },
+  rangeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  rangeChip: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 999, borderWidth: 1 },
+  rangeChipText: { fontSize: 14, fontWeight: '600' },
+  loadingText: { fontSize: 16 },
+  sectionTitle: { fontSize: 24, fontWeight: '700', marginBottom: 14 },
+  subheading: { fontSize: 18, fontWeight: '700', marginBottom: 12, marginTop: 4 },
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 12, marginBottom: 18 },
+  statCard: { width: '47%', borderWidth: 1, borderRadius: 14, padding: 16 },
+  statValue: { fontSize: 24, fontWeight: '700', marginBottom: 4 },
+  statLabel: { fontSize: 14 },
+  chartCard: { borderWidth: 1, borderRadius: 14, padding: 16 },
+  chartTitle: { fontSize: 18, fontWeight: '700', marginBottom: 12 },
+  chart: { borderRadius: 12 },
+  emptyText: { fontSize: 15 },
 });
