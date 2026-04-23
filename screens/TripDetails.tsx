@@ -94,6 +94,12 @@ function parseDate(value: string) {
   return new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
 }
 
+function startOfDay(date: Date) {
+  const copy = new Date(date);
+  copy.setHours(0, 0, 0, 0);
+  return copy;
+}
+
 function formatDisplayDate(value: string) {
   const date = parseDate(value);
   const day = String(date.getDate()).padStart(2, '0');
@@ -101,6 +107,43 @@ function formatDisplayDate(value: string) {
   const year = date.getFullYear();
 
   return `${day}-${month}-${year}`;
+}
+
+function differenceInDays(from: Date, to: Date) {
+  const msPerDay = 1000 * 60 * 60 * 24;
+  return Math.ceil((startOfDay(to).getTime() - startOfDay(from).getTime()) / msPerDay);
+}
+
+function getTripStatus(startDate: string, endDate: string) {
+  const today = startOfDay(new Date());
+  const start = startOfDay(parseDate(startDate));
+  const end = startOfDay(parseDate(endDate));
+
+  if (today < start) return 'Upcoming';
+  if (today > end) return 'Completed';
+  return 'In Progress';
+}
+
+function getTripCountdown(startDate: string, endDate: string) {
+  const today = startOfDay(new Date());
+  const start = startOfDay(parseDate(startDate));
+  const end = startOfDay(parseDate(endDate));
+
+  if (today < start) {
+    const days = differenceInDays(today, start);
+    return days === 1 ? 'Starts tomorrow' : `Starts in ${days} days`;
+  }
+
+  if (today > end) {
+    return 'Completed';
+  }
+
+  if (today.getTime() === end.getTime()) {
+    return 'Ends today';
+  }
+
+  const daysLeft = differenceInDays(today, end);
+  return daysLeft === 1 ? 'Ends tomorrow' : `Ends in ${daysLeft} days`;
 }
 
 export default function TripDetails({ navigation, route }: Props) {
@@ -290,6 +333,27 @@ export default function TripDetails({ navigation, route }: Props) {
     return colors.subtext;
   }
 
+  function getTripBadgeColors(status: string) {
+    if (status === 'Upcoming') {
+      return {
+        backgroundColor: themeMode === 'dark' ? '#1e3a5f' : '#dbeafe',
+        textColor: themeMode === 'dark' ? '#93c5fd' : '#1d4ed8',
+      };
+    }
+
+    if (status === 'In Progress') {
+      return {
+        backgroundColor: themeMode === 'dark' ? '#3f3a16' : '#fef3c7',
+        textColor: themeMode === 'dark' ? '#fde68a' : '#92400e',
+      };
+    }
+
+    return {
+      backgroundColor: themeMode === 'dark' ? '#1f2937' : '#e5e7eb',
+      textColor: themeMode === 'dark' ? '#d1d5db' : '#374151',
+    };
+  }
+
   function renderActivityItem({ item }: { item: Activity }) {
     return (
       <View
@@ -385,6 +449,10 @@ export default function TripDetails({ navigation, route }: Props) {
     );
   }
 
+  const tripStatus = getTripStatus(trip.startDate, trip.endDate);
+  const tripCountdown = getTripCountdown(trip.startDate, trip.endDate);
+  const tripBadge = getTripBadgeColors(tripStatus);
+
   return (
     <ScreenContainer>
       <FlatList
@@ -400,13 +468,27 @@ export default function TripDetails({ navigation, route }: Props) {
                 { backgroundColor: colors.card, borderColor: colors.border },
               ]}
             >
-              <Text style={[styles.tripTitle, { color: colors.text }]}>{trip.name}</Text>
+              <View style={styles.tripHeaderRow}>
+                <Text style={[styles.tripTitle, { color: colors.text }]}>{trip.name}</Text>
+                <View style={[styles.tripStatusBadge, { backgroundColor: tripBadge.backgroundColor }]}>
+                  <Text style={[styles.tripStatusBadgeText, { color: tripBadge.textColor }]}>
+                    {tripStatus}
+                  </Text>
+                </View>
+              </View>
+
               <Text style={[styles.tripDestination, { color: colors.text }]}>
                 {trip.destination}
               </Text>
+
               <Text style={[styles.tripDates, { color: colors.subtext }]}>
                 {formatDisplayDate(trip.startDate)} → {formatDisplayDate(trip.endDate)}
               </Text>
+
+              <Text style={[styles.tripCountdown, { color: colors.accent }]}>
+                {tripCountdown}
+              </Text>
+
               {trip.notes ? (
                 <Text style={[styles.tripNotes, { color: colors.subtext }]}>{trip.notes}</Text>
               ) : null}
@@ -736,10 +818,26 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 16,
   },
+  tripHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 10,
+    marginBottom: 6,
+  },
   tripTitle: {
+    flex: 1,
     fontSize: 26,
     fontWeight: '700',
-    marginBottom: 6,
+  },
+  tripStatusBadge: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  tripStatusBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   tripDestination: {
     fontSize: 18,
@@ -747,6 +845,11 @@ const styles = StyleSheet.create({
   },
   tripDates: {
     fontSize: 15,
+    marginBottom: 6,
+  },
+  tripCountdown: {
+    fontSize: 15,
+    fontWeight: '700',
     marginBottom: 8,
   },
   tripNotes: {
