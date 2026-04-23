@@ -13,6 +13,7 @@ import ScreenContainer from '../components/ScreenContainer';
 import { useTheme } from '../theme/ThemeContext';
 import { getCurrentUserId } from '../utils/authStorage';
 import { getTripsByUserId } from '../utils/trips';
+import { Image } from 'react-native';
 
 type SortOption = 'nearest' | 'furthest' | 'recent' | 'az';
 
@@ -324,16 +325,20 @@ export default function Trips({ navigation }: any) {
           >
             <View style={styles.heroTopRow}>
               <View
-                style={[
-                  styles.logoBox,
-                  {
-                    borderColor: themeMode === 'dark' ? '#315074' : '#2D415A',
-                    backgroundColor: themeMode === 'dark' ? '#1A3452' : '#22364D',
-                  },
-                ]}
-              >
-                <Text style={styles.logoBoxText}>Logo</Text>
-              </View>
+  style={[
+    styles.logoBox,
+    {
+      borderColor: themeMode === 'dark' ? '#315074' : '#2D415A',
+      backgroundColor: themeMode === 'dark' ? '#1A3452' : '#22364D',
+    },
+  ]}
+>
+  <Image
+    source={require('../assets/wanderly_logo.png')}
+    style={styles.logoImage}
+    resizeMode="contain"
+  />
+</View>
 
               <View style={styles.brandBlock}>
                 <Text style={[styles.brandName, { color: '#F8F5EF' }]}>Wanderly</Text>
@@ -567,10 +572,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logoBoxText: {
-    color: '#E5E7EB',
-    fontSize: 17,
-    fontWeight: '600',
+    // logo image
+  logoImage: {
+    width: 94,
+    height: 94,
   },
   brandBlock: {
     flex: 1,
