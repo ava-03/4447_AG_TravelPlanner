@@ -8,9 +8,11 @@ import {
   StyleSheet,
   Text,
   TouchableWithoutFeedback,
+  View,
 } from 'react-native';
 import ActivityForm from '../components/ActivityForm';
 import ScreenContainer from '../components/ScreenContainer';
+import { useTheme } from '../theme/ThemeContext';
 import {
   getActivityById,
   getCategoriesForUser,
@@ -30,6 +32,7 @@ type Props = {
 
 export default function EditActivity({ navigation, route }: Props) {
   const { activityId } = route.params;
+  const { themeMode } = useTheme();
 
   const [tripId, setTripId] = useState(0);
   const [categoryId, setCategoryId] = useState(0);
@@ -43,6 +46,29 @@ export default function EditActivity({ navigation, route }: Props) {
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
 
+  // Simple screen palette
+  const palette =
+    themeMode === 'dark'
+      ? {
+          page: '#0F172A',
+          hero: '#132A46',
+          heroBorder: '#1F3D63',
+          card: '#17263D',
+          border: '#28405F',
+          text: '#F8FAFC',
+          subtext: '#C7D2E0',
+        }
+      : {
+          page: '#F5F0E8',
+          hero: '#1A2E44',
+          heroBorder: '#1A2E44',
+          card: '#FFFFFF',
+          border: '#DDD6CA',
+          text: '#18212B',
+          subtext: '#6B7280',
+        };
+
+  // Load the activity and dropdown options
   useEffect(() => {
     async function loadData() {
       const userId = await getCurrentUserId();
@@ -84,6 +110,7 @@ export default function EditActivity({ navigation, route }: Props) {
     loadData();
   }, [activityId, navigation]);
 
+  // Save updated activity
   async function handleUpdate() {
     try {
       setLoading(true);
@@ -123,7 +150,9 @@ export default function EditActivity({ navigation, route }: Props) {
   if (initializing) {
     return (
       <ScreenContainer>
-        <Text>Loading activity...</Text>
+        <View style={[styles.loadingWrap, { backgroundColor: palette.page }]}>
+          <Text style={[styles.loadingText, { color: palette.text }]}>Loading activity...</Text>
+        </View>
       </ScreenContainer>
     );
   }
@@ -131,7 +160,7 @@ export default function EditActivity({ navigation, route }: Props) {
   return (
     <ScreenContainer>
       <KeyboardAvoidingView
-        style={styles.flex}
+        style={[styles.flex, { backgroundColor: palette.page }]}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -140,29 +169,59 @@ export default function EditActivity({ navigation, route }: Props) {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.title}>Edit Activity</Text>
+            {/* Top heading block */}
+            <View
+              style={[
+                styles.heroCard,
+                {
+                  backgroundColor: palette.hero,
+                  borderColor: palette.heroBorder,
+                },
+              ]}
+            >
+              <Text style={styles.heroTitle}>Edit Activity</Text>
+              <Text style={styles.heroSubtitle}>
+                Update the details for this activity below.
+              </Text>
+            </View>
 
-            <ActivityForm
-              tripId={tripId}
-              setTripId={setTripId}
-              categoryId={categoryId}
-              setCategoryId={setCategoryId}
-              title={title}
-              setTitle={setTitle}
-              date={date}
-              setDate={setDate}
-              durationMinutes={durationMinutes}
-              setDurationMinutes={setDurationMinutes}
-              notes={notes}
-              setNotes={setNotes}
-              isCompleted={isCompleted}
-              setIsCompleted={setIsCompleted}
-              tripOptions={tripOptions}
-              categoryOptions={categoryOptions}
-              onSubmit={handleUpdate}
-              submitLabel="Update Activity"
-              loading={loading}
-            />
+            {/* Form wrapper */}
+            <View
+              style={[
+                styles.formCard,
+                {
+                  backgroundColor: palette.card,
+                  borderColor: palette.border,
+                },
+              ]}
+            >
+              <Text style={[styles.formTitle, { color: palette.text }]}>Activity Details</Text>
+              <Text style={[styles.formSubtitle, { color: palette.subtext }]}>
+                Change the trip, category, date, duration, or notes for this activity.
+              </Text>
+
+              <ActivityForm
+                tripId={tripId}
+                setTripId={setTripId}
+                categoryId={categoryId}
+                setCategoryId={setCategoryId}
+                title={title}
+                setTitle={setTitle}
+                date={date}
+                setDate={setDate}
+                durationMinutes={durationMinutes}
+                setDurationMinutes={setDurationMinutes}
+                notes={notes}
+                setNotes={setNotes}
+                isCompleted={isCompleted}
+                setIsCompleted={setIsCompleted}
+                tripOptions={tripOptions}
+                categoryOptions={categoryOptions}
+                onSubmit={handleUpdate}
+                submitLabel="Update Activity"
+                loading={loading}
+              />
+            </View>
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
@@ -174,12 +233,55 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
   },
+
+  // Loading state
+  loadingWrap: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+
+  // Extra room at the bottom
   scrollContent: {
     paddingBottom: 40,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 20,
+
+  // Top heading styling
+  heroCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 18,
+    marginBottom: 14,
+  },
+  heroTitle: {
+    color: '#F8F5EF',
+    fontSize: 30,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  heroSubtitle: {
+    color: '#D7DEE8',
+    fontSize: 15,
+    lineHeight: 22,
+  },
+
+  // Form card styling
+  formCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 16,
+  },
+  formTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  formSubtitle: {
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 14,
   },
 });

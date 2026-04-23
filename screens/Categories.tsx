@@ -27,9 +27,38 @@ type Category = {
 };
 
 export default function Categories({ navigation }: Props) {
-  const { colors } = useTheme();
+  const { themeMode } = useTheme();
   const [categories, setCategories] = useState<Category[]>([]);
 
+  // Screen palette
+  const palette =
+    themeMode === 'dark'
+      ? {
+          page: '#0F172A',
+          hero: '#132A46',
+          heroBorder: '#1F3D63',
+          card: '#17263D',
+          border: '#28405F',
+          text: '#F8FAFC',
+          subtext: '#C7D2E0',
+          accent: '#D4A853',
+          danger: '#FCA5A5',
+          soft: '#111C2D',
+        }
+      : {
+          page: '#F5F0E8',
+          hero: '#1A2E44',
+          heroBorder: '#1A2E44',
+          card: '#FFFFFF',
+          border: '#DDD6CA',
+          text: '#18212B',
+          subtext: '#6B7280',
+          accent: '#C4622D',
+          danger: '#C24141',
+          soft: '#F8F5EF',
+        };
+
+  // Load user categories
   const loadCategories = useCallback(async () => {
     const userId = await getCurrentUserId();
 
@@ -51,6 +80,7 @@ export default function Categories({ navigation }: Props) {
     }, [loadCategories])
   );
 
+  // Delete category
   function handleDeleteCategory(category: Category) {
     Alert.alert(
       'Delete category',
@@ -69,39 +99,72 @@ export default function Categories({ navigation }: Props) {
     );
   }
 
+  // Single category card
   function renderCategory({ item }: { item: Category }) {
     return (
       <View
         style={[
           styles.card,
           {
-            backgroundColor: colors.card,
-            borderColor: colors.border,
+            backgroundColor: palette.card,
+            borderColor: palette.border,
           },
         ]}
       >
-        <View style={styles.topRow}>
+        <View style={styles.cardTop}>
           <View
             style={[
-              styles.iconCircle,
+              styles.iconWrap,
               { backgroundColor: item.color },
             ]}
           >
             <Ionicons name={item.icon as any} size={22} color="#fff" />
           </View>
 
-          <View style={styles.nameBlock}>
-            <Text style={[styles.name, { color: colors.text }]}>{item.name}</Text>
+          <View style={styles.textWrap}>
+            <Text style={[styles.name, { color: palette.text }]}>
+              {item.name}
+            </Text>
+
+            <Text style={[styles.helperText, { color: palette.subtext }]}>
+              Used for organising trip activities
+            </Text>
           </View>
         </View>
 
         <View style={styles.actionsRow}>
-          <Pressable onPress={() => navigation.navigate('EditCategory', { categoryId: item.id })}>
-            <Text style={[styles.editText, { color: colors.accent }]}>Edit</Text>
+          <Pressable
+            style={[
+              styles.smallButton,
+              {
+                backgroundColor: palette.soft,
+                borderColor: palette.border,
+              },
+            ]}
+            onPress={() =>
+              navigation.navigate('EditCategory', {
+                categoryId: item.id,
+              })
+            }
+          >
+            <Text style={[styles.smallButtonText, { color: palette.text }]}>
+              Edit
+            </Text>
           </Pressable>
 
-          <Pressable onPress={() => handleDeleteCategory(item)}>
-            <Text style={[styles.deleteText, { color: colors.danger }]}>Delete</Text>
+          <Pressable
+            style={[
+              styles.smallButton,
+              {
+                backgroundColor: palette.soft,
+                borderColor: palette.border,
+              },
+            ]}
+            onPress={() => handleDeleteCategory(item)}
+          >
+            <Text style={[styles.smallButtonText, { color: palette.danger }]}>
+              Delete
+            </Text>
           </Pressable>
         </View>
       </View>
@@ -110,110 +173,166 @@ export default function Categories({ navigation }: Props) {
 
   return (
     <ScreenContainer>
-      <View style={styles.headerRow}>
-        <Text style={[styles.title, { color: colors.text }]}>Categories</Text>
+      <View style={[styles.page, { backgroundColor: palette.page }]}>
+        {/* Top heading */}
+        <View
+          style={[
+            styles.heroCard,
+            {
+              backgroundColor: palette.hero,
+              borderColor: palette.heroBorder,
+            },
+          ]}
+        >
+          <Text style={styles.heroTitle}>Categories</Text>
 
-        <Pressable onPress={() => navigation.navigate('AddCategory')}>
-          <Text style={[styles.addText, { color: colors.accent }]}>Add Category</Text>
-        </Pressable>
-      </View>
+          <Text style={styles.heroSubtitle}>
+            Create categories to organise your travel activities.
+          </Text>
 
-      <FlatList
-        data={categories}
-        keyExtractor={(item) => String(item.id)}
-        renderItem={renderCategory}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={
-          <View
-            style={[
-              styles.emptyCard,
-              {
-                backgroundColor: colors.card,
-                borderColor: colors.border,
-              },
-            ]}
+          <Pressable
+            style={styles.addButton}
+            onPress={() => navigation.navigate('AddCategory')}
           >
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>No categories yet</Text>
-            <Text style={[styles.emptyText, { color: colors.subtext }]}>
-              Tap Add Category to create your first category.
-            </Text>
-          </View>
-        }
-      />
+            <Text style={styles.addButtonText}>+ Add Category</Text>
+          </Pressable>
+        </View>
+
+        {/* Category list */}
+        <FlatList
+          data={categories}
+          keyExtractor={(item) => String(item.id)}
+          renderItem={renderCategory}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={
+            <View
+              style={[
+                styles.emptyCard,
+                {
+                  backgroundColor: palette.card,
+                  borderColor: palette.border,
+                },
+              ]}
+            >
+              <Text style={[styles.emptyTitle, { color: palette.text }]}>
+                No categories yet
+              </Text>
+
+              <Text style={[styles.emptyText, { color: palette.subtext }]}>
+                Tap Add Category to create your first one.
+              </Text>
+            </View>
+          }
+        />
+      </View>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 18,
-    gap: 12,
+  page: {
+    flex: 1,
   },
-  title: {
+
+  // Top section
+  heroCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 18,
+    marginBottom: 14,
+  },
+  heroTitle: {
+    color: '#F8F5EF',
     fontSize: 30,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  heroSubtitle: {
+    color: '#D7DEE8',
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 14,
+  },
+  addButton: {
+    backgroundColor: '#C4622D',
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  addButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
     fontWeight: '700',
   },
-  addText: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
+
+  // List spacing
   listContent: {
     paddingBottom: 24,
   },
+
+  // Card styling
   card: {
     borderWidth: 1,
-    borderRadius: 18,
+    borderRadius: 12,
     padding: 14,
-    marginBottom: 10,
+    marginBottom: 12,
   },
-  topRow: {
+  cardTop: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  iconCircle: {
+  iconWrap: {
     width: 52,
     height: 52,
-    borderRadius: 26,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
-  nameBlock: {
+  textWrap: {
     flex: 1,
   },
   name: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 19,
+    fontWeight: '800',
+    marginBottom: 4,
   },
+  helperText: {
+    fontSize: 14,
+  },
+
+  // Buttons row
   actionsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: 10,
     marginTop: 14,
-    paddingTop: 4,
   },
-  editText: {
-    fontSize: 17,
-    fontWeight: '600',
+  smallButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
   },
-  deleteText: {
-    fontSize: 17,
-    fontWeight: '600',
+  smallButtonText: {
+    fontSize: 15,
+    fontWeight: '700',
   },
+
+  // Empty state
   emptyCard: {
     borderWidth: 1,
-    borderRadius: 18,
+    borderRadius: 12,
     padding: 20,
   },
   emptyTitle: {
     fontSize: 22,
-    fontWeight: '700',
+    fontWeight: '800',
     marginBottom: 6,
   },
   emptyText: {
     fontSize: 15,
+    lineHeight: 22,
   },
 });
