@@ -197,7 +197,7 @@ export default function EditActivity({ navigation, route }: Props) {
             >
               <Text style={[styles.formTitle, { color: palette.text }]}>Activity Details</Text>
               <Text style={[styles.formSubtitle, { color: palette.subtext }]}>
-                Change the trip, category, date, duration, or notes for this activity.
+                Change the trip, category, date, duration or notes for this activity.
               </Text>
 
               <ActivityForm

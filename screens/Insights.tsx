@@ -108,7 +108,7 @@ export default function Insights({ navigation }: any) {
   const [range, setRange] = useState<InsightRange>('monthly');
   const [loading, setLoading] = useState(true);
 
-  // Screen palette
+  // screen palette
   const palette =
     themeMode === 'dark'
       ? {
@@ -152,7 +152,7 @@ export default function Insights({ navigation }: any) {
           statBg: '#FBF8F3',
         };
 
-  // Load insights data
+  // load insights data
   const loadInsights = useCallback(async () => {
     const userId = await getCurrentUserId();
 
@@ -182,7 +182,7 @@ export default function Insights({ navigation }: any) {
     }, [loadInsights])
   );
 
-  // Main summary calculations
+  // main summary calculations
   const summary = useMemo(() => {
     const now = new Date();
 
@@ -253,7 +253,7 @@ export default function Insights({ navigation }: any) {
     };
   }, [activities, categories, trips, range]);
 
-  // Keep chart labels short
+  // keep chart labels short
   const chartLabels = summary.minutesByCategory.map((item) =>
     item.name.length > 8 ? item.name.slice(0, 8) : item.name
   );
@@ -274,7 +274,7 @@ export default function Insights({ navigation }: any) {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.content}
         >
-          {/* Top heading block */}
+          {/* top heading block */}
           <View
             style={[
               styles.heroCard,
@@ -291,7 +291,7 @@ export default function Insights({ navigation }: any) {
             </Text>
           </View>
 
-          {/* Range filter block */}
+          {/* range filter block */}
           <View
             style={[
               styles.filterCard,
@@ -334,12 +334,12 @@ export default function Insights({ navigation }: any) {
             </Text>
           ) : (
             <>
-              {/* Section title */}
+              {/* section title */}
               <Text style={[styles.sectionTitle, { color: palette.text }]}>
                 {getRangeTitle()}
               </Text>
 
-              {/* Trips summary */}
+              {/* trips summary */}
               <Text style={[styles.subheading, { color: palette.text }]}>Trips</Text>
 
               <View style={styles.statsGrid}>
@@ -353,27 +353,23 @@ export default function Insights({ navigation }: any) {
                     key={item.label}
                     style={[
                       styles.statCard,
-                      { backgroundColor: palette.card, borderColor: palette.border },
+                      {
+                        backgroundColor: palette.card,
+                        borderColor: palette.border,
+                      },
                     ]}
                   >
-                    <View
-                      style={[
-                        styles.statInner,
-                        { backgroundColor: palette.statBg, borderColor: palette.border },
-                      ]}
-                    >
-                      <Text style={[styles.statValue, { color: palette.text }]}>
-                        {item.value}
-                      </Text>
-                      <Text style={[styles.statLabel, { color: palette.subtext }]}>
-                        {item.label}
-                      </Text>
-                    </View>
+                    <Text style={[styles.statValue, { color: palette.text }]}>
+                      {item.value}
+                    </Text>
+                    <Text style={[styles.statLabel, { color: palette.subtext }]}>
+                      {item.label}
+                    </Text>
                   </View>
                 ))}
               </View>
 
-              {/* Activities summary */}
+              {/* activities summary */}
               <Text style={[styles.subheading, { color: palette.text }]}>Activities</Text>
 
               <View style={styles.statsGrid}>
@@ -387,30 +383,26 @@ export default function Insights({ navigation }: any) {
                     key={item.label}
                     style={[
                       styles.statCard,
-                      { backgroundColor: palette.card, borderColor: palette.border },
+                      {
+                        backgroundColor: palette.card,
+                        borderColor: palette.border,
+                      },
                     ]}
                   >
-                    <View
-                      style={[
-                        styles.statInner,
-                        { backgroundColor: palette.statBg, borderColor: palette.border },
-                      ]}
+                    <Text
+                      style={[styles.statValue, { color: palette.text }]}
+                      numberOfLines={1}
                     >
-                      <Text
-                        style={[styles.statValue, { color: palette.text }]}
-                        numberOfLines={1}
-                      >
-                        {item.value}
-                      </Text>
-                      <Text style={[styles.statLabel, { color: palette.subtext }]}>
-                        {item.label}
-                      </Text>
-                    </View>
+                      {item.value}
+                    </Text>
+                    <Text style={[styles.statLabel, { color: palette.subtext }]}>
+                      {item.label}
+                    </Text>
                   </View>
                 ))}
               </View>
 
-              {/* Chart block */}
+              {/* chart block */}
               <View
                 style={[
                   styles.chartCard,
@@ -469,7 +461,7 @@ export default function Insights({ navigation }: any) {
           )}
         </ScrollView>
 
-        {/* Nav bar styling */}
+        {/* nav bar styling */}
         <View
           style={[
             styles.tabBar,
@@ -518,12 +510,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Extra bottom room for nav bar
+  // extra bottom room for nav bar
   content: {
     paddingBottom: 110,
   },
 
-  // Top heading styling
+  // top heading styling
   heroCard: {
     borderWidth: 1,
     borderRadius: 12,
@@ -542,7 +534,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
 
-  // Range selector card
+  // range selector card
   filterCard: {
     borderWidth: 1,
     borderRadius: 12,
@@ -570,12 +562,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // Loading state
+  // loading state
   loadingText: {
     fontSize: 16,
   },
 
-  // Main headings
+  // main headings
   sectionTitle: {
     fontSize: 24,
     fontWeight: '800',
@@ -588,7 +580,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
-  // Stats layout
+  // stat card layout
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -600,14 +592,10 @@ const styles = StyleSheet.create({
     width: '47%',
     borderWidth: 1,
     borderRadius: 12,
-    padding: 10,
-  },
-  statInner: {
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: 14,
-    minHeight: 98,
+    paddingVertical: 22,
+    paddingHorizontal: 18,
     justifyContent: 'center',
+    minHeight: 112,
   },
   statValue: {
     fontSize: 24,
@@ -619,7 +607,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 
-  // Chart block
+  // chart block
   chartCard: {
     borderWidth: 1,
     borderRadius: 12,
@@ -653,7 +641,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
 
-  // Bottom nav
+  // bottom nav
   tabBar: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -187,7 +187,7 @@ export default function EditTarget({ navigation, route }: any) {
               </Text>
 
               <Text style={[styles.formSubtitle, { color: palette.subtext }]}>
-                Change the title, period, category, or goal amount.
+                Change the title, period, category or goal amount.
               </Text>
 
               <TargetForm

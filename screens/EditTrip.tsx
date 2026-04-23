@@ -162,7 +162,7 @@ export default function EditTrip({ navigation, route }: Props) {
             >
               <Text style={[styles.formTitle, { color: palette.text }]}>Trip Details</Text>
               <Text style={[styles.formSubtitle, { color: palette.subtext }]}>
-                Change the destination, dates, or notes for this trip.
+                Change the destination, dates or notes for this trip.
               </Text>
 
               <TripForm
