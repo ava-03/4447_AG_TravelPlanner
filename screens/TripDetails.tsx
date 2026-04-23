@@ -2,9 +2,9 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
-  Button,
   FlatList,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -161,7 +161,70 @@ function getTripCountdown(startDate: string, endDate: string) {
 
 export default function TripDetails({ navigation, route }: Props) {
   const { tripId } = route.params;
-  const { colors, themeMode } = useTheme();
+  const { themeMode } = useTheme();
+
+  // Screen palette
+  const palette = themeMode === 'dark'
+    ? {
+        page: '#0F172A',
+        hero: '#132A46',
+        heroBorder: '#1F3D63',
+        surface: '#111C2D',
+        card: '#17263D',
+        border: '#28405F',
+        text: '#F8FAFC',
+        subtext: '#C7D2E0',
+        accent: '#D4A853',
+        primary: '#C4622D',
+        primaryText: '#FFFFFF',
+        blue: '#3B82F6',
+        blueSoft: '#1E3A5F',
+        blueText: '#93C5FD',
+        yellowSoft: '#4A3E18',
+        yellowText: '#F7D774',
+        graySoft: '#334155',
+        grayText: '#E2E8F0',
+        danger: '#FCA5A5',
+        dangerSoft: '#2A1E24',
+        dangerBorder: '#5B3340',
+        input: '#10233A',
+        placeholder: '#8FA0B6',
+        chip: '#13233A',
+        chipActive: '#C4622D',
+        chipText: '#C7D2E0',
+        chipTextActive: '#FFFFFF',
+        success: '#86EFAC',
+      }
+    : {
+        page: '#F5F0E8',
+        hero: '#1A2E44',
+        heroBorder: '#1A2E44',
+        surface: '#FFFDF9',
+        card: '#FFFFFF',
+        border: '#DDD6CA',
+        text: '#18212B',
+        subtext: '#6B7280',
+        accent: '#D4A853',
+        primary: '#C4622D',
+        primaryText: '#FFFFFF',
+        blue: '#2563EB',
+        blueSoft: '#DBEAFE',
+        blueText: '#1D4ED8',
+        yellowSoft: '#FEF3C7',
+        yellowText: '#92400E',
+        graySoft: '#E5E7EB',
+        grayText: '#374151',
+        danger: '#C24141',
+        dangerSoft: '#FFF5F5',
+        dangerBorder: '#F3C7C7',
+        input: '#FFFFFF',
+        placeholder: '#9CA3AF',
+        chip: '#FFFFFF',
+        chipActive: '#C4622D',
+        chipText: '#4B5563',
+        chipTextActive: '#FFFFFF',
+        success: '#166534',
+      };
 
   const [trip, setTrip] = useState<Trip | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -176,6 +239,7 @@ export default function TripDetails({ navigation, route }: Props) {
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'not_completed'>('all');
 
+  // Load all trip data together
   const loadData = useCallback(async () => {
     const userId = await getCurrentUserId();
 
@@ -233,6 +297,7 @@ export default function TripDetails({ navigation, route }: Props) {
     }, [loadData])
   );
 
+  // Build category chips here
   const categoryOptions = useMemo(() => {
     return Object.entries(categoryMap).map(([id, name]) => ({
       id: Number(id),
@@ -240,6 +305,7 @@ export default function TripDetails({ navigation, route }: Props) {
     }));
   }, [categoryMap]);
 
+  // Filter activities here
   const filteredActivities = useMemo(() => {
     const normalizedSearch = searchText.trim().toLowerCase();
 
@@ -267,6 +333,7 @@ export default function TripDetails({ navigation, route }: Props) {
     setStatusFilter('all');
   }
 
+  // Add packing item
   async function handleAddPackingItem() {
     if (!newPackingItem.trim()) return;
 
@@ -279,16 +346,19 @@ export default function TripDetails({ navigation, route }: Props) {
     }
   }
 
+  // Tick or untick packing item
   async function handleTogglePackingItem(item: PackingItem) {
     await togglePackingItem(item.id, item.isChecked);
     await loadData();
   }
 
+  // Delete packing item
   async function handleDeletePackingItem(item: PackingItem) {
     await deletePackingItem(item.id);
     await loadData();
   }
 
+  // Export csv
   async function handleExportCsv() {
     if (!trip) return;
 
@@ -313,6 +383,7 @@ export default function TripDetails({ navigation, route }: Props) {
     }
   }
 
+  // Delete whole trip
   function handleDeleteTrip() {
     if (!trip) return;
 
@@ -333,6 +404,7 @@ export default function TripDetails({ navigation, route }: Props) {
     );
   }
 
+  // Delete activity
   function handleDeleteActivity(activityId: number, title: string) {
     Alert.alert(
       'Delete activity',
@@ -351,6 +423,7 @@ export default function TripDetails({ navigation, route }: Props) {
     );
   }
 
+  // Delete target
   function handleDeleteTarget(targetId: number, title: string) {
     Alert.alert(
       'Delete target',
@@ -370,114 +443,119 @@ export default function TripDetails({ navigation, route }: Props) {
   }
 
   function getStatusColor(status: 'Unmet' | 'Met' | 'Exceeded') {
-    if (status === 'Exceeded') return colors.danger;
-    if (status === 'Met') return themeMode === 'dark' ? '#4ade80' : '#2e7d32';
-    return colors.subtext;
+    if (status === 'Exceeded') return palette.danger;
+    if (status === 'Met') return palette.success;
+    return palette.subtext;
   }
 
   function getTripBadgeColors(status: string) {
     if (status === 'Upcoming') {
       return {
-        backgroundColor: themeMode === 'dark' ? '#1e3a5f' : '#dbeafe',
-        textColor: themeMode === 'dark' ? '#93c5fd' : '#1d4ed8',
+        backgroundColor: palette.blueSoft,
+        textColor: palette.blueText,
       };
     }
 
     if (status === 'In Progress') {
       return {
-        backgroundColor: themeMode === 'dark' ? '#3f3a16' : '#fef3c7',
-        textColor: themeMode === 'dark' ? '#fde68a' : '#92400e',
+        backgroundColor: palette.yellowSoft,
+        textColor: palette.yellowText,
       };
     }
 
     return {
-      backgroundColor: themeMode === 'dark' ? '#1f2937' : '#e5e7eb',
-      textColor: themeMode === 'dark' ? '#d1d5db' : '#374151',
+      backgroundColor: palette.graySoft,
+      textColor: palette.grayText,
     };
   }
 
+  // Activity card
   function renderActivityItem({ item }: { item: Activity }) {
     return (
       <View
         style={[
           styles.activityCard,
-          { backgroundColor: colors.card, borderColor: colors.border },
+          { backgroundColor: palette.card, borderColor: palette.border },
         ]}
       >
         <Pressable onPress={() => navigation.navigate('EditActivity', { activityId: item.id })}>
-          <Text style={[styles.activityTitle, { color: colors.text }]}>{item.title}</Text>
-          <Text style={[styles.activityMeta, { color: colors.subtext }]}>
-            {formatDisplayDate(item.date)} • {item.metricValue} mins
+          <Text style={[styles.activityTitle, { color: palette.text }]}>{item.title}</Text>
+
+          <Text style={[styles.activityMeta, { color: palette.subtext }]}>
+            {formatDisplayDate(item.date)} • {item.metricValue} {item.metricUnit}
           </Text>
-          <Text style={[styles.activityMeta, { color: colors.subtext }]}>
+
+          <Text style={[styles.activityMeta, { color: palette.subtext }]}>
             Category: {categoryMap[item.categoryId] ?? 'Unknown'}
           </Text>
-          <Text style={[styles.activityMeta, { color: colors.subtext }]}>
+
+          <Text style={[styles.activityMeta, { color: palette.subtext }]}>
             Status: {item.isCompleted === 1 ? 'Completed' : 'Not completed'}
           </Text>
+
           {item.notes ? (
-            <Text style={[styles.activityNotes, { color: colors.subtext }]}>{item.notes}</Text>
+            <Text style={[styles.activityNotes, { color: palette.subtext }]}>{item.notes}</Text>
           ) : null}
         </Pressable>
 
         <View style={styles.rowButtons}>
-          <View style={styles.halfButton}>
-            <Button
-              title="Edit"
-              color={colors.accent}
-              onPress={() => navigation.navigate('EditActivity', { activityId: item.id })}
-            />
-          </View>
-          <View style={styles.halfButton}>
-            <Button
-              title="Delete"
-              color={colors.danger}
-              onPress={() => handleDeleteActivity(item.id, item.title)}
-            />
-          </View>
+          <Pressable
+            style={[styles.secondaryButtonHalf, { backgroundColor: palette.surface, borderColor: palette.border }]}
+            onPress={() => navigation.navigate('EditActivity', { activityId: item.id })}
+          >
+            <Text style={[styles.secondaryButtonHalfText, { color: palette.text }]}>Edit</Text>
+          </Pressable>
+
+          <Pressable
+            style={[styles.secondaryButtonHalf, { backgroundColor: palette.dangerSoft, borderColor: palette.dangerBorder }]}
+            onPress={() => handleDeleteActivity(item.id, item.title)}
+          >
+            <Text style={[styles.secondaryButtonHalfText, { color: palette.danger }]}>Delete</Text>
+          </Pressable>
         </View>
       </View>
     );
   }
 
+  // Target card
   function renderTargetItem({ item }: { item: TripTargetWithProgress }) {
     return (
       <View
         style={[
           styles.targetCard,
-          { backgroundColor: colors.card, borderColor: colors.border },
+          { backgroundColor: palette.card, borderColor: palette.border },
         ]}
       >
-        <Text style={[styles.targetTitle, { color: colors.text }]}>{item.title}</Text>
-        <Text style={[styles.targetMeta, { color: colors.subtext }]}>
+        <Text style={[styles.targetTitle, { color: palette.text }]}>{item.title}</Text>
+
+        <Text style={[styles.targetMeta, { color: palette.subtext }]}>
           Category: {item.categoryId ? categoryMap[item.categoryId] ?? 'Unknown' : 'All categories'}
         </Text>
-        <Text style={[styles.targetMeta, { color: colors.subtext }]}>Goal: {item.goal} mins</Text>
-        <Text style={[styles.targetMeta, { color: colors.subtext }]}>
-          Current: {item.current} mins
-        </Text>
-        <Text style={[styles.targetMeta, { color: colors.subtext }]}>
+
+        <Text style={[styles.targetMeta, { color: palette.subtext }]}>Goal: {item.goal} mins</Text>
+        <Text style={[styles.targetMeta, { color: palette.subtext }]}>Current: {item.current} mins</Text>
+        <Text style={[styles.targetMeta, { color: palette.subtext }]}>
           Remaining: {item.remaining} mins
         </Text>
+
         <Text style={[styles.targetStatus, { color: getStatusColor(item.status) }]}>
           Status: {item.status}
         </Text>
 
         <View style={styles.rowButtons}>
-          <View style={styles.halfButton}>
-            <Button
-              title="Edit"
-              color={colors.accent}
-              onPress={() => navigation.navigate('EditTarget', { targetId: item.id })}
-            />
-          </View>
-          <View style={styles.halfButton}>
-            <Button
-              title="Delete"
-              color={colors.danger}
-              onPress={() => handleDeleteTarget(item.id, item.title)}
-            />
-          </View>
+          <Pressable
+            style={[styles.secondaryButtonHalf, { backgroundColor: palette.surface, borderColor: palette.border }]}
+            onPress={() => navigation.navigate('EditTarget', { targetId: item.id })}
+          >
+            <Text style={[styles.secondaryButtonHalfText, { color: palette.text }]}>Edit</Text>
+          </Pressable>
+
+          <Pressable
+            style={[styles.secondaryButtonHalf, { backgroundColor: palette.dangerSoft, borderColor: palette.dangerBorder }]}
+            onPress={() => handleDeleteTarget(item.id, item.title)}
+          >
+            <Text style={[styles.secondaryButtonHalfText, { color: palette.danger }]}>Delete</Text>
+          </Pressable>
         </View>
       </View>
     );
@@ -486,7 +564,9 @@ export default function TripDetails({ navigation, route }: Props) {
   if (loading || !trip) {
     return (
       <ScreenContainer>
-        <Text style={{ color: colors.text }}>Loading trip details...</Text>
+        <View style={[styles.loadingWrap, { backgroundColor: palette.page }]}>
+          <Text style={{ color: palette.text }}>Loading trip details...</Text>
+        </View>
       </ScreenContainer>
     );
   }
@@ -497,533 +577,485 @@ export default function TripDetails({ navigation, route }: Props) {
 
   return (
     <ScreenContainer>
-      <FlatList
-        data={filteredActivities}
-        keyExtractor={(item) => `activity-${item.id}`}
-        renderItem={renderActivityItem}
-        contentContainerStyle={styles.listContent}
-        ListHeaderComponent={
-          <>
-            <View
-              style={[
-                styles.tripCard,
-                { backgroundColor: colors.card, borderColor: colors.border },
-              ]}
-            >
-              <View style={styles.tripHeaderRow}>
-                <Text style={[styles.tripTitle, { color: colors.text }]}>{trip.name}</Text>
-                <View style={[styles.tripStatusBadge, { backgroundColor: tripBadge.backgroundColor }]}>
-                  <Text style={[styles.tripStatusBadgeText, { color: tripBadge.textColor }]}>
-                    {tripStatus}
-                  </Text>
-                </View>
-              </View>
+      <View style={[styles.page, { backgroundColor: palette.page }]}>
+        <FlatList
+          data={filteredActivities}
+          keyExtractor={(item) => `activity-${item.id}`}
+          renderItem={renderActivityItem}
+          contentContainerStyle={styles.listContent}
+          ListHeaderComponent={
+            <>
+              {/* Hero section */}
+              <View
+                style={[
+                  styles.heroCard,
+                  {
+                    backgroundColor: palette.hero,
+                    borderColor: palette.heroBorder,
+                  },
+                ]}
+              >
+                <View style={styles.heroTopRow}>
+                  <Pressable onPress={() => navigation.goBack()}>
+                    <Text style={[styles.backText, { color: '#D7DEE8' }]}>‹ My Trips</Text>
+                  </Pressable>
 
-              <Text style={[styles.tripDestination, { color: colors.text }]}>
-                {trip.destination}
-              </Text>
-
-              <Text style={[styles.tripDates, { color: colors.subtext }]}>
-                {formatDisplayDate(trip.startDate)} → {formatDisplayDate(trip.endDate)}
-              </Text>
-
-              <Text style={[styles.tripCountdown, { color: colors.accent }]}>
-                {tripCountdown}
-              </Text>
-
-              {trip.notes ? (
-                <Text style={[styles.tripNotes, { color: colors.subtext }]}>{trip.notes}</Text>
-              ) : null}
-            </View>
-
-            <View style={styles.tripActions}>
-              <View style={styles.primaryActionRow}>
-                <Pressable
-                  style={[
-                    styles.actionCard,
-                    {
-                      backgroundColor: themeMode === 'dark' ? colors.accent : '#111',
-                      borderColor: themeMode === 'dark' ? colors.accent : '#111',
-                    },
-                  ]}
-                  onPress={() => navigation.navigate('AddActivity', { tripId: trip.id })}
-                >
-                  <Text
+                  <View
                     style={[
-                      styles.primaryActionText,
-                      { color: themeMode === 'dark' ? '#0f1115' : '#ffffff' },
+                      styles.heroStatusBadge,
+                      { backgroundColor: tripBadge.backgroundColor },
                     ]}
                   >
+                    <Text style={[styles.heroStatusBadgeText, { color: tripBadge.textColor }]}>
+                      {tripStatus}
+                    </Text>
+                  </View>
+                </View>
+
+                <Text style={[styles.heroTitle, { color: '#F8F5EF' }]}>{trip.name}</Text>
+                <Text style={[styles.heroDestination, { color: '#D7DEE8' }]}>{trip.destination}</Text>
+
+                <Text style={[styles.heroDates, { color: '#D7DEE8' }]}>
+                  {formatDisplayDate(trip.startDate)} → {formatDisplayDate(trip.endDate)}
+                </Text>
+
+                <Text style={[styles.heroCountdown, { color: '#F7D774' }]}>{tripCountdown}</Text>
+
+                {trip.notes ? (
+                  <Text style={[styles.heroNotes, { color: '#D7DEE8' }]}>{trip.notes}</Text>
+                ) : null}
+              </View>
+
+              {/* Main trip buttons */}
+              <View style={styles.actionsGrid}>
+                <Pressable
+                  style={[styles.primaryActionButton, { backgroundColor: palette.primary }]}
+                  onPress={() => navigation.navigate('AddActivity', { tripId: trip.id })}
+                >
+                  <Text style={[styles.primaryActionText, { color: palette.primaryText }]}>
                     + Add Activity
                   </Text>
                 </Pressable>
 
                 <Pressable
-                  style={[
-                    styles.actionCard,
-                    {
-                      backgroundColor: themeMode === 'dark' ? colors.accent : '#111',
-                      borderColor: themeMode === 'dark' ? colors.accent : '#111',
-                    },
-                  ]}
+                  style={[styles.primaryActionButton, { backgroundColor: palette.hero }]}
                   onPress={() => navigation.navigate('AddTarget', { tripId: trip.id })}
                 >
-                  <Text
-                    style={[
-                      styles.primaryActionText,
-                      { color: themeMode === 'dark' ? '#0f1115' : '#ffffff' },
-                    ]}
-                  >
+                  <Text style={[styles.primaryActionText, { color: '#FFFFFF' }]}>
                     + Add Target
                   </Text>
                 </Pressable>
-              </View>
 
-              <View style={styles.secondaryActionRow}>
                 <Pressable
-                  style={[
-                    styles.actionCard,
-                    {
-                      backgroundColor: colors.card,
-                      borderColor: colors.border,
-                    },
-                  ]}
+                  style={[styles.secondaryActionButton, { backgroundColor: palette.surface, borderColor: palette.border }]}
                   onPress={() => navigation.navigate('EditTrip', { tripId: trip.id })}
                 >
-                  <Text style={[styles.secondaryActionText, { color: colors.accent }]}>
-                    Edit Trip
-                  </Text>
+                  <Text style={[styles.secondaryActionText, { color: palette.text }]}>Edit Trip</Text>
                 </Pressable>
 
                 <Pressable
-                  style={[
-                    styles.actionCard,
-                    {
-                      backgroundColor: colors.card,
-                      borderColor: colors.border,
-                    },
-                  ]}
+                  style={[styles.secondaryActionButton, { backgroundColor: palette.surface, borderColor: palette.border }]}
                   onPress={handleExportCsv}
                 >
-                  <Text style={[styles.secondaryActionText, { color: colors.accent }]}>
-                    Export CSV
-                  </Text>
+                  <Text style={[styles.secondaryActionText, { color: palette.text }]}>Export CSV</Text>
                 </Pressable>
               </View>
 
-              <View style={styles.deleteRow}>
-                <Pressable
-                  style={[
-                    styles.actionCard,
-                    {
-                      backgroundColor: colors.card,
-                      borderColor: colors.border,
-                    },
-                  ]}
-                  onPress={handleDeleteTrip}
-                >
-                  <Text style={[styles.deleteActionText, { color: colors.danger }]}>
-                    Delete Trip
-                  </Text>
-                </Pressable>
-              </View>
-            </View>
-
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Packing List</Text>
-
-            <View
-              style={[
-                styles.packingCard,
-                { backgroundColor: colors.card, borderColor: colors.border },
-              ]}
-            >
-              <View style={styles.packingInputRow}>
-                <TextInput
-                  style={[
-                    styles.packingInput,
-                    {
-                      backgroundColor: colors.input,
-                      borderColor: colors.border,
-                      color: colors.text,
-                    },
-                  ]}
-                  placeholder="Add packing item"
-                  placeholderTextColor={colors.placeholder}
-                  value={newPackingItem}
-                  onChangeText={setNewPackingItem}
-                />
-                <Pressable
-                  style={[styles.addPackingButton, { backgroundColor: colors.accent }]}
-                  onPress={handleAddPackingItem}
-                >
-                  <Text style={styles.addPackingButtonText}>Add</Text>
-                </Pressable>
-              </View>
-
-              {packingItems.length === 0 ? (
-                <Text style={[styles.packingEmptyText, { color: colors.subtext }]}>
-                  No packing items yet.
+              <Pressable
+                style={[styles.deleteTripButton, { backgroundColor: palette.dangerSoft, borderColor: palette.dangerBorder }]}
+                onPress={handleDeleteTrip}
+              >
+                <Text style={[styles.deleteTripButtonText, { color: palette.danger }]}>
+                  Delete Trip
                 </Text>
-              ) : (
-                packingItems.map((item) => (
-                  <View key={item.id} style={styles.packingItemRow}>
-                    <Pressable
-                      style={styles.packingLeft}
-                      onPress={() => handleTogglePackingItem(item)}
-                    >
-                      <View
-                        style={[
-                          styles.checkbox,
-                          {
-                            borderColor: item.isChecked === 1 ? colors.accent : colors.border,
-                            backgroundColor: item.isChecked === 1 ? colors.accent : 'transparent',
-                          },
-                        ]}
-                      >
-                        {item.isChecked === 1 ? (
-                          <Text style={styles.checkboxTick}>✓</Text>
-                        ) : null}
-                      </View>
+              </Pressable>
 
-                      <Text
-                        style={[
-                          styles.packingItemText,
-                          {
-                            color: colors.text,
-                            textDecorationLine: item.isChecked === 1 ? 'line-through' : 'none',
-                            opacity: item.isChecked === 1 ? 0.7 : 1,
-                          },
-                        ]}
-                      >
-                        {item.title}
-                      </Text>
-                    </Pressable>
+              {/* Packing list section */}
+              <Text style={[styles.sectionTitle, { color: palette.text }]}>Packing List</Text>
 
-                    <Pressable onPress={() => handleDeletePackingItem(item)}>
-                      <Text style={[styles.deletePackingText, { color: colors.danger }]}>
-                        Delete
-                      </Text>
-                    </Pressable>
-                  </View>
-                ))
-              )}
-            </View>
-
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Activities</Text>
-
-            <View
-              style={[
-                styles.filtersCard,
-                { backgroundColor: colors.card, borderColor: colors.border },
-              ]}
-            >
-              <TextInput
+              <View
                 style={[
-                  styles.input,
-                  {
-                    backgroundColor: colors.input,
-                    borderColor: colors.border,
-                    color: colors.text,
-                  },
+                  styles.sectionCard,
+                  { backgroundColor: palette.card, borderColor: palette.border },
                 ]}
-                placeholder="Search activities"
-                placeholderTextColor={colors.placeholder}
-                value={searchText}
-                onChangeText={setSearchText}
-                accessibilityLabel="Search trip activities input"
-              />
-
-              <Text style={[styles.filterLabel, { color: colors.subtext }]}>Category</Text>
-              <View style={styles.filterChipsRow}>
-                <Pressable
-                  style={[
-                    styles.filterChip,
-                    {
-                      backgroundColor: colors.chip,
-                      borderColor: colors.border,
-                    },
-                    selectedCategoryId === null && {
-                      backgroundColor: colors.chipActive,
-                      borderColor: colors.chipActive,
-                    },
-                  ]}
-                  onPress={() => setSelectedCategoryId(null)}
-                >
-                  <Text
+              >
+                <View style={styles.packingInputRow}>
+                  <TextInput
                     style={[
-                      styles.filterChipText,
-                      { color: colors.chipText },
-                      selectedCategoryId === null && { color: colors.chipTextActive },
+                      styles.packingInput,
+                      {
+                        backgroundColor: palette.input,
+                        borderColor: palette.border,
+                        color: palette.text,
+                      },
+                    ]}
+                    placeholder="Add packing item"
+                    placeholderTextColor={palette.placeholder}
+                    value={newPackingItem}
+                    onChangeText={setNewPackingItem}
+                  />
+
+                  <Pressable
+                    style={[styles.addPackingButton, { backgroundColor: palette.primary }]}
+                    onPress={handleAddPackingItem}
+                  >
+                    <Text style={[styles.addPackingButtonText, { color: palette.primaryText }]}>
+                      Add
+                    </Text>
+                  </Pressable>
+                </View>
+
+                {packingItems.length === 0 ? (
+                  <View
+                    style={[
+                      styles.packingEmptyState,
+                      { borderColor: palette.border, backgroundColor: palette.surface },
                     ]}
                   >
-                    All
-                  </Text>
-                </Pressable>
+                    <Text style={[styles.packingEmptyTitle, { color: palette.subtext }]}>
+                      Nothing packed yet.
+                    </Text>
+                    <Text style={[styles.packingEmptyText, { color: palette.subtext }]}>
+                      Start adding items for this trip.
+                    </Text>
+                  </View>
+                ) : (
+                  packingItems.map((item) => (
+                    <View
+                      key={item.id}
+                      style={[styles.packingItemRow, { borderTopColor: palette.border }]}
+                    >
+                      <Pressable
+                        style={styles.packingLeft}
+                        onPress={() => handleTogglePackingItem(item)}
+                      >
+                        <View
+                          style={[
+                            styles.checkbox,
+                            {
+                              borderColor: item.isChecked === 1 ? palette.primary : palette.border,
+                              backgroundColor: item.isChecked === 1 ? palette.primary : 'transparent',
+                            },
+                          ]}
+                        >
+                          {item.isChecked === 1 ? (
+                            <Text style={styles.checkboxTick}>✓</Text>
+                          ) : null}
+                        </View>
 
-                {categoryOptions.map((category) => (
+                        <Text
+                          style={[
+                            styles.packingItemText,
+                            {
+                              color: palette.text,
+                              textDecorationLine: item.isChecked === 1 ? 'line-through' : 'none',
+                              opacity: item.isChecked === 1 ? 0.7 : 1,
+                            },
+                          ]}
+                        >
+                          {item.title}
+                        </Text>
+                      </Pressable>
+
+                      <Pressable onPress={() => handleDeletePackingItem(item)}>
+                        <Text style={[styles.deletePackingText, { color: palette.danger }]}>
+                          Delete
+                        </Text>
+                      </Pressable>
+                    </View>
+                  ))
+                )}
+              </View>
+
+              {/* Activities section */}
+              <Text style={[styles.sectionTitle, { color: palette.text }]}>Activities</Text>
+
+              <View
+                style={[
+                  styles.sectionCard,
+                  { backgroundColor: palette.card, borderColor: palette.border },
+                ]}
+              >
+                <TextInput
+                  style={[
+                    styles.input,
+                    {
+                      backgroundColor: palette.input,
+                      borderColor: palette.border,
+                      color: palette.text,
+                    },
+                  ]}
+                  placeholder="Search activities"
+                  placeholderTextColor={palette.placeholder}
+                  value={searchText}
+                  onChangeText={setSearchText}
+                  accessibilityLabel="Search trip activities input"
+                />
+
+                <Text style={[styles.filterLabel, { color: palette.subtext }]}>Category</Text>
+
+                <View style={styles.filterChipsRow}>
                   <Pressable
-                    key={category.id}
                     style={[
                       styles.filterChip,
                       {
-                        backgroundColor: colors.chip,
-                        borderColor: colors.border,
-                      },
-                      selectedCategoryId === category.id && {
-                        backgroundColor: colors.chipActive,
-                        borderColor: colors.chipActive,
+                        backgroundColor: selectedCategoryId === null ? palette.chipActive : palette.chip,
+                        borderColor: selectedCategoryId === null ? palette.chipActive : palette.border,
                       },
                     ]}
-                    onPress={() => setSelectedCategoryId(category.id)}
+                    onPress={() => setSelectedCategoryId(null)}
                   >
                     <Text
                       style={[
                         styles.filterChipText,
-                        { color: colors.chipText },
-                        selectedCategoryId === category.id && { color: colors.chipTextActive },
+                        { color: selectedCategoryId === null ? palette.chipTextActive : palette.chipText },
                       ]}
                     >
-                      {category.name}
+                      All
                     </Text>
                   </Pressable>
-                ))}
-              </View>
 
-              <Text style={[styles.filterLabel, { color: colors.subtext }]}>Status</Text>
-              <View style={styles.filterChipsRow}>
-                <Pressable
-                  style={[
-                    styles.filterChip,
-                    {
-                      backgroundColor: colors.chip,
-                      borderColor: colors.border,
-                    },
-                    statusFilter === 'all' && {
-                      backgroundColor: colors.chipActive,
-                      borderColor: colors.chipActive,
-                    },
-                  ]}
-                  onPress={() => setStatusFilter('all')}
-                >
-                  <Text
-                    style={[
-                      styles.filterChipText,
-                      { color: colors.chipText },
-                      statusFilter === 'all' && { color: colors.chipTextActive },
-                    ]}
-                  >
-                    All
-                  </Text>
-                </Pressable>
-
-                <Pressable
-                  style={[
-                    styles.filterChip,
-                    {
-                      backgroundColor: colors.chip,
-                      borderColor: colors.border,
-                    },
-                    statusFilter === 'completed' && {
-                      backgroundColor: colors.chipActive,
-                      borderColor: colors.chipActive,
-                    },
-                  ]}
-                  onPress={() => setStatusFilter('completed')}
-                >
-                  <Text
-                    style={[
-                      styles.filterChipText,
-                      { color: colors.chipText },
-                      statusFilter === 'completed' && { color: colors.chipTextActive },
-                    ]}
-                  >
-                    Completed
-                  </Text>
-                </Pressable>
-
-                <Pressable
-                  style={[
-                    styles.filterChip,
-                    {
-                      backgroundColor: colors.chip,
-                      borderColor: colors.border,
-                    },
-                    statusFilter === 'not_completed' && {
-                      backgroundColor: colors.chipActive,
-                      borderColor: colors.chipActive,
-                    },
-                  ]}
-                  onPress={() => setStatusFilter('not_completed')}
-                >
-                  <Text
-                    style={[
-                      styles.filterChipText,
-                      { color: colors.chipText },
-                      statusFilter === 'not_completed' && { color: colors.chipTextActive },
-                    ]}
-                  >
-                    Not Completed
-                  </Text>
-                </Pressable>
-              </View>
-
-              <Pressable style={styles.clearFiltersButton} onPress={clearActivityFilters}>
-                <Text style={[styles.clearFiltersText, { color: colors.accent }]}>
-                  Clear Filters
-                </Text>
-              </Pressable>
-            </View>
-          </>
-        }
-        ListEmptyComponent={
-          <View
-            style={[
-              styles.emptyState,
-              { backgroundColor: colors.card, borderColor: colors.border },
-            ]}
-          >
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>No matching activities</Text>
-            <Text style={[styles.emptyText, { color: colors.subtext }]}>
-              Try changing the activity filters or add a new activity.
-            </Text>
-          </View>
-        }
-        ListFooterComponent={
-          <>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Targets</Text>
-
-            {targets.length === 0 ? (
-              <View
-                style={[
-                  styles.emptyState,
-                  { backgroundColor: colors.card, borderColor: colors.border },
-                ]}
-              >
-                <Text style={[styles.emptyTitle, { color: colors.text }]}>No targets yet</Text>
-                <Text style={[styles.emptyText, { color: colors.subtext }]}>
-                  Add a target to track how busy or balanced this trip is.
-                </Text>
-              </View>
-            ) : (
-              targets.map((target) => (
-                <View key={`target-${target.id}`}>
-                  {renderTargetItem({ item: target })}
+                  {categoryOptions.map((category) => (
+                    <Pressable
+                      key={category.id}
+                      style={[
+                        styles.filterChip,
+                        {
+                          backgroundColor: selectedCategoryId === category.id ? palette.chipActive : palette.chip,
+                          borderColor: selectedCategoryId === category.id ? palette.chipActive : palette.border,
+                        },
+                      ]}
+                      onPress={() => setSelectedCategoryId(category.id)}
+                    >
+                      <Text
+                        style={[
+                          styles.filterChipText,
+                          { color: selectedCategoryId === category.id ? palette.chipTextActive : palette.chipText },
+                        ]}
+                      >
+                        {category.name}
+                      </Text>
+                    </Pressable>
+                  ))}
                 </View>
-              ))
-            )}
 
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Insights</Text>
+                <Text style={[styles.filterLabel, { color: palette.subtext }]}>Status</Text>
 
-            {insights ? (
-              <TripInsightsCard
-                totalMinutes={insights.totalMinutes}
-                totalActivities={insights.totalActivities}
-                completedActivities={insights.completedActivities}
-                busiestCategory={insights.busiestCategory}
-                minutesByCategory={insights.minutesByCategory}
-              />
-            ) : null}
-          </>
-        }
-      />
+                <View style={styles.filterChipsRow}>
+                  {[
+                    { label: 'All', value: 'all' },
+                    { label: 'Completed', value: 'completed' },
+                    { label: 'Not Completed', value: 'not_completed' },
+                  ].map((option) => (
+                    <Pressable
+                      key={option.value}
+                      style={[
+                        styles.filterChip,
+                        {
+                          backgroundColor: statusFilter === option.value ? palette.chipActive : palette.chip,
+                          borderColor: statusFilter === option.value ? palette.chipActive : palette.border,
+                        },
+                      ]}
+                      onPress={() => setStatusFilter(option.value as 'all' | 'completed' | 'not_completed')}
+                    >
+                      <Text
+                        style={[
+                          styles.filterChipText,
+                          { color: statusFilter === option.value ? palette.chipTextActive : palette.chipText },
+                        ]}
+                      >
+                        {option.label}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+
+                <Pressable style={styles.clearFiltersButton} onPress={clearActivityFilters}>
+                  <Text style={[styles.clearFiltersText, { color: palette.primary }]}>
+                    Clear Filters
+                  </Text>
+                </Pressable>
+              </View>
+            </>
+          }
+          ListEmptyComponent={
+            <View
+              style={[
+                styles.emptyState,
+                { backgroundColor: palette.card, borderColor: palette.border },
+              ]}
+            >
+              <Text style={[styles.emptyTitle, { color: palette.text }]}>No matching activities</Text>
+              <Text style={[styles.emptyText, { color: palette.subtext }]}>
+                Try changing the filters or add a new activity.
+              </Text>
+            </View>
+          }
+          ListFooterComponent={
+            <>
+              {/* Targets section */}
+              <Text style={[styles.sectionTitle, { color: palette.text }]}>Targets</Text>
+
+              {targets.length === 0 ? (
+                <View
+                  style={[
+                    styles.emptyState,
+                    { backgroundColor: palette.card, borderColor: palette.border },
+                  ]}
+                >
+                  <Text style={[styles.emptyTitle, { color: palette.text }]}>No targets yet</Text>
+                  <Text style={[styles.emptyText, { color: palette.subtext }]}>
+                    Add a target to track this trip more clearly.
+                  </Text>
+                </View>
+              ) : (
+                targets.map((target) => (
+                  <View key={`target-${target.id}`}>
+                    {renderTargetItem({ item: target })}
+                  </View>
+                ))
+              )}
+
+              {/* Insights section */}
+              <Text style={[styles.sectionTitle, { color: palette.text }]}>Insights</Text>
+
+              {insights ? (
+                <TripInsightsCard
+                  totalMinutes={insights.totalMinutes}
+                  totalActivities={insights.totalActivities}
+                  completedActivities={insights.completedActivities}
+                  busiestCategory={insights.busiestCategory}
+                  minutesByCategory={insights.minutesByCategory}
+                />
+              ) : null}
+            </>
+          }
+        />
+      </View>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
+  page: {
+    flex: 1,
+  },
+  loadingWrap: {
+    flex: 1,
+    justifyContent: 'center',
+  },
   listContent: {
-    paddingBottom: 24,
+    paddingBottom: 28,
   },
-  tripCard: {
+
+  // Hero section
+  heroCard: {
     borderWidth: 1,
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: 12,
+    padding: 18,
+    marginBottom: 14,
   },
-  tripHeaderRow: {
+  heroTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    marginBottom: 16,
     gap: 10,
-    marginBottom: 6,
   },
-  tripTitle: {
-    flex: 1,
-    fontSize: 26,
-    fontWeight: '700',
+  backText: {
+    fontSize: 15,
+    fontWeight: '600',
   },
-  tripStatusBadge: {
-    borderRadius: 999,
+  heroStatusBadge: {
+    borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
-  tripStatusBadgeText: {
+  heroStatusBadgeText: {
     fontSize: 12,
     fontWeight: '700',
   },
-  tripDestination: {
-    fontSize: 18,
+  heroTitle: {
+    fontSize: 32,
+    fontWeight: '800',
     marginBottom: 6,
   },
-  tripDates: {
+  heroDestination: {
+    fontSize: 17,
+    fontWeight: '500',
+    marginBottom: 6,
+  },
+  heroDates: {
     fontSize: 15,
     marginBottom: 6,
   },
-  tripCountdown: {
-    fontSize: 15,
-    fontWeight: '700',
+  heroCountdown: {
+    fontSize: 16,
+    fontWeight: '800',
     marginBottom: 8,
   },
-  tripNotes: {
-    fontSize: 15,
+  heroNotes: {
+    fontSize: 14,
+    lineHeight: 20,
   },
-  tripActions: {
-    marginBottom: 22,
-    gap: 10,
-  },
-  primaryActionRow: {
+
+  // Button grid
+  actionsGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10,
+    marginBottom: 10,
   },
-  secondaryActionRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  deleteRow: {
-    flexDirection: 'row',
-  },
-  actionCard: {
-    flex: 1,
-    borderRadius: 14,
+  primaryActionButton: {
+    width: '48.5%',
+    borderRadius: 12,
     paddingVertical: 14,
-    paddingHorizontal: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
   },
   primaryActionText: {
     fontSize: 15,
     fontWeight: '700',
   },
+  secondaryActionButton: {
+    width: '48.5%',
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   secondaryActionText: {
     fontSize: 15,
     fontWeight: '700',
   },
-  deleteActionText: {
+  deleteTripButton: {
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 18,
+  },
+  deleteTripButtonText: {
     fontSize: 15,
     fontWeight: '700',
   },
+
+  // Section titles
   sectionTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 14,
+    fontSize: 25,
+    fontWeight: '800',
+    marginBottom: 12,
   },
-  packingCard: {
+  sectionCard: {
     borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: 12,
     padding: 14,
     marginBottom: 18,
   },
+
+  // Packing list
   packingInputRow: {
     flexDirection: 'row',
     gap: 10,
@@ -1032,20 +1064,32 @@ const styles = StyleSheet.create({
   packingInput: {
     flex: 1,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 16,
   },
   addPackingButton: {
-    borderRadius: 10,
-    paddingHorizontal: 16,
+    borderRadius: 12,
+    paddingHorizontal: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
   addPackingButtonText: {
-    color: '#fff',
+    fontSize: 15,
     fontWeight: '700',
+  },
+  packingEmptyState: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  packingEmptyTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
   },
   packingEmptyText: {
     fontSize: 15,
@@ -1054,9 +1098,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
   },
   packingLeft: {
     flexDirection: 'row',
@@ -1086,57 +1129,56 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  filtersCard: {
-    borderWidth: 1,
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 16,
-    gap: 12,
-  },
+
+  // Filter block
   input: {
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 16,
+    marginBottom: 12,
   },
   filterLabel: {
     fontSize: 14,
     fontWeight: '600',
-    marginBottom: -4,
+    marginBottom: 8,
   },
   filterChipsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+    marginBottom: 12,
   },
   filterChip: {
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
+    paddingVertical: 9,
+    borderRadius: 10,
     borderWidth: 1,
   },
   filterChipText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   clearFiltersButton: {
     alignSelf: 'flex-start',
-    marginTop: 4,
+    marginTop: 2,
   },
   clearFiltersText: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '700',
   },
+
+  // Activity card
   activityCard: {
     borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: 12,
     padding: 16,
     marginBottom: 14,
   },
   activityTitle: {
     fontSize: 19,
-    fontWeight: '700',
+    fontWeight: '800',
     marginBottom: 4,
   },
   activityMeta: {
@@ -1146,16 +1188,19 @@ const styles = StyleSheet.create({
   activityNotes: {
     fontSize: 14,
     marginTop: 6,
+    lineHeight: 20,
   },
+
+  // Target card
   targetCard: {
     borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: 12,
     padding: 16,
     marginBottom: 14,
   },
   targetTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: '800',
     marginBottom: 6,
   },
   targetMeta: {
@@ -1164,29 +1209,43 @@ const styles = StyleSheet.create({
   },
   targetStatus: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '700',
     marginTop: 6,
   },
+
+  // Small button row
   rowButtons: {
     flexDirection: 'row',
     gap: 10,
     marginTop: 14,
   },
-  halfButton: {
+  secondaryButtonHalf: {
     flex: 1,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  secondaryButtonHalfText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+
+  // Empty states
   emptyState: {
     padding: 20,
     borderWidth: 1,
-    borderRadius: 14,
-    marginBottom: 16,
+    borderRadius: 12,
+    marginBottom: 18,
   },
   emptyTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: '800',
     marginBottom: 8,
   },
   emptyText: {
     fontSize: 16,
+    lineHeight: 22,
   },
 });
