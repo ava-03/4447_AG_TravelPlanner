@@ -5,16 +5,55 @@ import ScreenContainer from '../components/ScreenContainer';
 import { useTheme } from '../theme/ThemeContext';
 import { deleteUserById, getUserById } from '../utils/auth';
 import { clearCurrentUserId, getCurrentUserId } from '../utils/authStorage';
+import { getTripsByUserId } from '../utils/trips';
 
 type Props = {
   navigation: any;
 };
+
+type Trip = {
+  id: number;
+  userId: number;
+  name: string;
+  destination: string;
+  startDate: string;
+  endDate: string;
+  notes?: string | null;
+};
+
+function parseDate(value: string) {
+  const parts = value.split('-');
+
+  if (parts[0]?.length === 4) {
+    return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  }
+
+  return new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+}
+
+function startOfDay(date: Date) {
+  const copy = new Date(date);
+  copy.setHours(0, 0, 0, 0);
+  return copy;
+}
+
+function getTripStatus(startDate: string, endDate: string) {
+  const today = startOfDay(new Date());
+  const start = startOfDay(parseDate(startDate));
+  const end = startOfDay(parseDate(endDate));
+
+  if (today < start) return 'Upcoming';
+  if (today > end) return 'Completed';
+  return 'In Progress';
+}
 
 export default function Profile({ navigation }: Props) {
   const { themeMode, toggleTheme } = useTheme();
 
   const [userName, setUserName] = useState<string>('User');
   const [userEmail, setUserEmail] = useState<string>('');
+  const [completedTripsCount, setCompletedTripsCount] = useState(0);
+  const [upcomingTripsCount, setUpcomingTripsCount] = useState(0);
 
   // Profile screen palette
   const palette = themeMode === 'dark'
@@ -76,7 +115,10 @@ export default function Profile({ navigation }: Props) {
           return;
         }
 
-        const user = await getUserById(userId);
+        const [user, trips] = await Promise.all([
+          getUserById(userId),
+          getTripsByUserId(userId),
+        ]);
 
         if (!user) {
           await clearCurrentUserId();
@@ -87,8 +129,19 @@ export default function Profile({ navigation }: Props) {
           return;
         }
 
+        const completedTrips = trips.filter((trip: Trip) => {
+          return getTripStatus(trip.startDate, trip.endDate) === 'Completed';
+        }).length;
+
+        const upcomingTrips = trips.filter((trip: Trip) => {
+          const status = getTripStatus(trip.startDate, trip.endDate);
+          return status === 'Upcoming' || status === 'In Progress';
+        }).length;
+
         setUserName(user.name);
         setUserEmail(user.email);
+        setCompletedTripsCount(completedTrips);
+        setUpcomingTripsCount(upcomingTrips);
       }
 
       loadUser();
@@ -164,6 +217,45 @@ export default function Profile({ navigation }: Props) {
 
             <Text style={[styles.nameText, { color: '#F8F5EF' }]}>{userName}</Text>
             <Text style={[styles.emailText, { color: '#D7DEE8' }]}>{userEmail}</Text>
+          </View>
+
+          {/* Trip totals */}
+          <View style={styles.section}>
+            <View style={styles.statsRow}>
+              <View
+                style={[
+                  styles.statCard,
+                  {
+                    backgroundColor: palette.card,
+                    borderColor: palette.border,
+                  },
+                ]}
+              >
+                <Text style={[styles.statNumber, { color: palette.text }]}>
+                  {completedTripsCount}
+                </Text>
+                <Text style={[styles.statLabel, { color: palette.subtext }]}>
+                  Completed Trips
+                </Text>
+              </View>
+
+              <View
+                style={[
+                  styles.statCard,
+                  {
+                    backgroundColor: palette.card,
+                    borderColor: palette.border,
+                  },
+                ]}
+              >
+                <Text style={[styles.statNumber, { color: palette.text }]}>
+                  {upcomingTripsCount}
+                </Text>
+                <Text style={[styles.statLabel, { color: palette.subtext }]}>
+                  Upcoming Trips
+                </Text>
+              </View>
+            </View>
           </View>
 
           {/* Main settings block */}
@@ -318,6 +410,31 @@ const styles = StyleSheet.create({
   // Spacing between blocks
   section: {
     marginBottom: 16,
+  },
+
+  // Stats row
+  statsRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  statCard: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 18,
+    paddingHorizontal: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statNumber: {
+    fontSize: 26,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  statLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
   },
 
   // Settings row card
