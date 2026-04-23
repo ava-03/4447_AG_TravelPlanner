@@ -4,7 +4,6 @@ import {
   Alert,
   FlatList,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -18,7 +17,7 @@ import {
   getCategoryMapForUser,
 } from '../utils/activities';
 import { getCurrentUserId } from '../utils/authStorage';
-import { exportTripActivitiesToCsv } from '../utils/exportCsv';
+import { exportTripDataToCsv } from '../utils/exportCsv';
 import { getTripInsights } from '../utils/insights';
 import {
   createPackingItem,
@@ -105,6 +104,13 @@ function parseDate(value: string) {
   }
 
   return new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+}
+
+function isValidDateInput(value: string) {
+  if (!value.trim()) return false;
+
+  const parsed = parseDate(value);
+  return !Number.isNaN(parsed.getTime());
 }
 
 function startOfDay(date: Date) {
@@ -238,6 +244,8 @@ export default function TripDetails({ navigation, route }: Props) {
   const [searchText, setSearchText] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'not_completed'>('all');
+  const [startDateFilter, setStartDateFilter] = useState('');
+  const [endDateFilter, setEndDateFilter] = useState('');
 
   // Load all trip data together
   const loadData = useCallback(async () => {
@@ -308,8 +316,16 @@ export default function TripDetails({ navigation, route }: Props) {
   // Filter activities here
   const filteredActivities = useMemo(() => {
     const normalizedSearch = searchText.trim().toLowerCase();
+    const parsedStartFilter = isValidDateInput(startDateFilter)
+      ? startOfDay(parseDate(startDateFilter))
+      : null;
+    const parsedEndFilter = isValidDateInput(endDateFilter)
+      ? startOfDay(parseDate(endDateFilter))
+      : null;
 
     return activities.filter((activity) => {
+      const activityDate = startOfDay(parseDate(activity.date));
+
       const matchesText =
         normalizedSearch.length === 0 ||
         activity.title.toLowerCase().includes(normalizedSearch) ||
@@ -323,14 +339,36 @@ export default function TripDetails({ navigation, route }: Props) {
         (statusFilter === 'completed' && activity.isCompleted === 1) ||
         (statusFilter === 'not_completed' && activity.isCompleted === 0);
 
-      return matchesText && matchesCategory && matchesStatus;
-    });
-  }, [activities, searchText, selectedCategoryId, statusFilter]);
+      const matchesStartDate =
+        parsedStartFilter === null || activityDate >= parsedStartFilter;
 
+      const matchesEndDate =
+        parsedEndFilter === null || activityDate <= parsedEndFilter;
+
+      return (
+        matchesText &&
+        matchesCategory &&
+        matchesStatus &&
+        matchesStartDate &&
+        matchesEndDate
+      );
+    });
+  }, [
+    activities,
+    searchText,
+    selectedCategoryId,
+    statusFilter,
+    startDateFilter,
+    endDateFilter,
+  ]);
+
+  // Clear all activity filters
   function clearActivityFilters() {
     setSearchText('');
     setSelectedCategoryId(null);
     setStatusFilter('all');
+    setStartDateFilter('');
+    setEndDateFilter('');
   }
 
   // Add packing item
@@ -358,12 +396,12 @@ export default function TripDetails({ navigation, route }: Props) {
     await loadData();
   }
 
-  // Export csv
+  // Export trip data to csv
   async function handleExportCsv() {
     if (!trip) return;
 
     try {
-      const exportRows = activities.map((activity) => ({
+      const activityRows = activities.map((activity) => ({
         id: activity.id,
         title: activity.title,
         date: activity.date,
@@ -374,8 +412,24 @@ export default function TripDetails({ navigation, route }: Props) {
         notes: activity.notes ?? '',
       }));
 
-      await exportTripActivitiesToCsv(trip.name, exportRows);
-      Alert.alert('Success', 'Trip activities exported successfully.');
+      const packingRows = packingItems.map((item) => ({
+        id: item.id,
+        title: item.title,
+        checked: item.isChecked === 1 ? 'Yes' : 'No',
+      }));
+
+      await exportTripDataToCsv(trip.name, [
+        {
+          title: 'Activities',
+          rows: activityRows,
+        },
+        {
+          title: 'Packing List',
+          rows: packingRows,
+        },
+      ]);
+
+      Alert.alert('Success', 'Trip data exported successfully.');
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Failed to export CSV.';
@@ -500,14 +554,20 @@ export default function TripDetails({ navigation, route }: Props) {
 
         <View style={styles.rowButtons}>
           <Pressable
-            style={[styles.secondaryButtonHalf, { backgroundColor: palette.surface, borderColor: palette.border }]}
+            style={[
+              styles.secondaryButtonHalf,
+              { backgroundColor: palette.surface, borderColor: palette.border },
+            ]}
             onPress={() => navigation.navigate('EditActivity', { activityId: item.id })}
           >
             <Text style={[styles.secondaryButtonHalfText, { color: palette.text }]}>Edit</Text>
           </Pressable>
 
           <Pressable
-            style={[styles.secondaryButtonHalf, { backgroundColor: palette.dangerSoft, borderColor: palette.dangerBorder }]}
+            style={[
+              styles.secondaryButtonHalf,
+              { backgroundColor: palette.dangerSoft, borderColor: palette.dangerBorder },
+            ]}
             onPress={() => handleDeleteActivity(item.id, item.title)}
           >
             <Text style={[styles.secondaryButtonHalfText, { color: palette.danger }]}>Delete</Text>
@@ -544,14 +604,20 @@ export default function TripDetails({ navigation, route }: Props) {
 
         <View style={styles.rowButtons}>
           <Pressable
-            style={[styles.secondaryButtonHalf, { backgroundColor: palette.surface, borderColor: palette.border }]}
+            style={[
+              styles.secondaryButtonHalf,
+              { backgroundColor: palette.surface, borderColor: palette.border },
+            ]}
             onPress={() => navigation.navigate('EditTarget', { targetId: item.id })}
           >
             <Text style={[styles.secondaryButtonHalfText, { color: palette.text }]}>Edit</Text>
           </Pressable>
 
           <Pressable
-            style={[styles.secondaryButtonHalf, { backgroundColor: palette.dangerSoft, borderColor: palette.dangerBorder }]}
+            style={[
+              styles.secondaryButtonHalf,
+              { backgroundColor: palette.dangerSoft, borderColor: palette.dangerBorder },
+            ]}
             onPress={() => handleDeleteTarget(item.id, item.title)}
           >
             <Text style={[styles.secondaryButtonHalfText, { color: palette.danger }]}>Delete</Text>
@@ -647,14 +713,20 @@ export default function TripDetails({ navigation, route }: Props) {
                 </Pressable>
 
                 <Pressable
-                  style={[styles.secondaryActionButton, { backgroundColor: palette.surface, borderColor: palette.border }]}
+                  style={[
+                    styles.secondaryActionButton,
+                    { backgroundColor: palette.surface, borderColor: palette.border },
+                  ]}
                   onPress={() => navigation.navigate('EditTrip', { tripId: trip.id })}
                 >
                   <Text style={[styles.secondaryActionText, { color: palette.text }]}>Edit Trip</Text>
                 </Pressable>
 
                 <Pressable
-                  style={[styles.secondaryActionButton, { backgroundColor: palette.surface, borderColor: palette.border }]}
+                  style={[
+                    styles.secondaryActionButton,
+                    { backgroundColor: palette.surface, borderColor: palette.border },
+                  ]}
                   onPress={handleExportCsv}
                 >
                   <Text style={[styles.secondaryActionText, { color: palette.text }]}>Export CSV</Text>
@@ -662,7 +734,10 @@ export default function TripDetails({ navigation, route }: Props) {
               </View>
 
               <Pressable
-                style={[styles.deleteTripButton, { backgroundColor: palette.dangerSoft, borderColor: palette.dangerBorder }]}
+                style={[
+                  styles.deleteTripButton,
+                  { backgroundColor: palette.dangerSoft, borderColor: palette.dangerBorder },
+                ]}
                 onPress={handleDeleteTrip}
               >
                 <Text style={[styles.deleteTripButtonText, { color: palette.danger }]}>
@@ -792,6 +867,47 @@ export default function TripDetails({ navigation, route }: Props) {
                   accessibilityLabel="Search trip activities input"
                 />
 
+                {/* date range filters */}
+                <Text style={[styles.filterLabel, { color: palette.subtext }]}>Date Range</Text>
+
+                <View style={styles.dateFilterRow}>
+                  <TextInput
+                    style={[
+                      styles.dateInput,
+                      {
+                        backgroundColor: palette.input,
+                        borderColor: palette.border,
+                        color: palette.text,
+                      },
+                    ]}
+                    placeholder="Start date"
+                    placeholderTextColor={palette.placeholder}
+                    value={startDateFilter}
+                    onChangeText={setStartDateFilter}
+                    accessibilityLabel="Start date filter input"
+                  />
+
+                  <TextInput
+                    style={[
+                      styles.dateInput,
+                      {
+                        backgroundColor: palette.input,
+                        borderColor: palette.border,
+                        color: palette.text,
+                      },
+                    ]}
+                    placeholder="End date"
+                    placeholderTextColor={palette.placeholder}
+                    value={endDateFilter}
+                    onChangeText={setEndDateFilter}
+                    accessibilityLabel="End date filter input"
+                  />
+                </View>
+
+                <Text style={[styles.dateHint, { color: palette.subtext }]}>
+                  Enter dates as DD-MM-YYYY
+                </Text>
+
                 <Text style={[styles.filterLabel, { color: palette.subtext }]}>Category</Text>
 
                 <View style={styles.filterChipsRow}>
@@ -808,7 +924,12 @@ export default function TripDetails({ navigation, route }: Props) {
                     <Text
                       style={[
                         styles.filterChipText,
-                        { color: selectedCategoryId === null ? palette.chipTextActive : palette.chipText },
+                        {
+                          color:
+                            selectedCategoryId === null
+                              ? palette.chipTextActive
+                              : palette.chipText,
+                        },
                       ]}
                     >
                       All
@@ -821,8 +942,14 @@ export default function TripDetails({ navigation, route }: Props) {
                       style={[
                         styles.filterChip,
                         {
-                          backgroundColor: selectedCategoryId === category.id ? palette.chipActive : palette.chip,
-                          borderColor: selectedCategoryId === category.id ? palette.chipActive : palette.border,
+                          backgroundColor:
+                            selectedCategoryId === category.id
+                              ? palette.chipActive
+                              : palette.chip,
+                          borderColor:
+                            selectedCategoryId === category.id
+                              ? palette.chipActive
+                              : palette.border,
                         },
                       ]}
                       onPress={() => setSelectedCategoryId(category.id)}
@@ -830,7 +957,12 @@ export default function TripDetails({ navigation, route }: Props) {
                       <Text
                         style={[
                           styles.filterChipText,
-                          { color: selectedCategoryId === category.id ? palette.chipTextActive : palette.chipText },
+                          {
+                            color:
+                              selectedCategoryId === category.id
+                                ? palette.chipTextActive
+                                : palette.chipText,
+                          },
                         ]}
                       >
                         {category.name}
@@ -852,16 +984,25 @@ export default function TripDetails({ navigation, route }: Props) {
                       style={[
                         styles.filterChip,
                         {
-                          backgroundColor: statusFilter === option.value ? palette.chipActive : palette.chip,
-                          borderColor: statusFilter === option.value ? palette.chipActive : palette.border,
+                          backgroundColor:
+                            statusFilter === option.value ? palette.chipActive : palette.chip,
+                          borderColor:
+                            statusFilter === option.value ? palette.chipActive : palette.border,
                         },
                       ]}
-                      onPress={() => setStatusFilter(option.value as 'all' | 'completed' | 'not_completed')}
+                      onPress={() =>
+                        setStatusFilter(option.value as 'all' | 'completed' | 'not_completed')
+                      }
                     >
                       <Text
                         style={[
                           styles.filterChipText,
-                          { color: statusFilter === option.value ? palette.chipTextActive : palette.chipText },
+                          {
+                            color:
+                              statusFilter === option.value
+                                ? palette.chipTextActive
+                                : palette.chipText,
+                          },
                         ]}
                       >
                         {option.label}
@@ -1137,6 +1278,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 16,
+    marginBottom: 12,
+  },
+  dateFilterRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 8,
+  },
+  dateInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+  },
+  dateHint: {
+    fontSize: 13,
     marginBottom: 12,
   },
   filterLabel: {

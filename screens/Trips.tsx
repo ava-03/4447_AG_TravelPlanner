@@ -135,7 +135,7 @@ export default function Trips({ navigation }: any) {
         accent: '#D4A853',
         primary: '#C4622D',
         primaryText: '#FFFFFF',
-        upcomingBar: '#2563EB',
+        upcomingBar: '#27508e',
         upcomingBadgeBg: '#DBEAFE',
         upcomingBadgeText: '#1D4ED8',
         progressBar: '#D4A853',

@@ -2,57 +2,66 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import Papa from 'papaparse';
 
-type ExportActivity = {
-  id: number;
+type CsvSection = {
   title: string;
-  date: string;
-  category: string;
-  metricValue: number;
-  metricUnit: string;
-  status: string;
-  notes: string;
+  rows: Record<string, string | number | boolean | null | undefined>[];
 };
 
-function formatDisplayDate(value: string) {
-  const parts = value.split('-');
-
-  if (parts[0]?.length === 4) {
-    return `${parts[2]}-${parts[1]}-${parts[0]}`;
-  }
-
-  return value;
+// small helper to keep file names safe
+function makeSafeFileName(value: string) {
+  return value
+    .trim()
+    .replace(/\s+/g, '_')
+    .replace(/[^\w-]/g, '');
 }
 
-export async function exportTripActivitiesToCsv(
+// builds one csv string with multiple sections
+function buildSectionedCsv(sections: CsvSection[]) {
+  const parts: string[] = [];
+
+  sections.forEach((section, index) => {
+    parts.push(section.title);
+
+    if (section.rows.length === 0) {
+      parts.push('No data');
+    } else {
+      const csv = Papa.unparse(section.rows);
+      parts.push(csv);
+    }
+
+    if (index < sections.length - 1) {
+      parts.push('');
+      parts.push('');
+    }
+  });
+
+  return parts.join('\n');
+}
+
+// export csv with multiple sections
+export async function exportTripDataToCsv(
   tripName: string,
-  activities: ExportActivity[]
+  sections: CsvSection[]
 ) {
-  const rows = activities.map((activity) => ({
-    ID: activity.id,
-    Title: activity.title,
-    Date: formatDisplayDate(activity.date),
-    Category: activity.category,
-    Value: activity.metricValue,
-    Unit: activity.metricUnit,
-    Status: activity.status,
-    Notes: activity.notes,
-  }));
+  const isAvailable = await Sharing.isAvailableAsync();
 
-  const csv = Papa.unparse(rows);
+  if (!isAvailable) {
+    throw new Error('Sharing is not available on this device.');
+  }
 
-  const safeTripName = tripName
-    .replace(/[^a-z0-9]/gi, '_')
-    .toLowerCase();
+  const safeTripName = makeSafeFileName(tripName || 'trip');
+  const fileName = `${safeTripName}_trip_export.csv`;
+  const fileUri = `${FileSystem.documentDirectory}${fileName}`;
 
-  const fileUri =
-    FileSystem.documentDirectory +
-    `${safeTripName}_activities.csv`;
+  const csvContent = buildSectionedCsv(sections);
 
-  await FileSystem.writeAsStringAsync(fileUri, csv);
+  await FileSystem.writeAsStringAsync(fileUri, csvContent, {
+    encoding: FileSystem.EncodingType.UTF8,
+  });
 
   await Sharing.shareAsync(fileUri, {
     mimeType: 'text/csv',
-    dialogTitle: 'Export CSV',
+    dialogTitle: 'Export Trip CSV',
     UTI: 'public.comma-separated-values-text',
   });
 }
