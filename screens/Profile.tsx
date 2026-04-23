@@ -1,8 +1,7 @@
 import { useFocusEffect } from '@react-navigation/native';
-import { useCallback, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import ScreenContainer from '../components/ScreenContainer';
-import ThemeToggleCard from '../components/ThemeToggleCard';
 import { useTheme } from '../theme/ThemeContext';
 import { deleteUserById, getUserById } from '../utils/auth';
 import { clearCurrentUserId, getCurrentUserId } from '../utils/authStorage';
@@ -12,11 +11,58 @@ type Props = {
 };
 
 export default function Profile({ navigation }: Props) {
-  const { colors } = useTheme();
+  const { themeMode, toggleTheme } = useTheme();
 
   const [userName, setUserName] = useState<string>('User');
   const [userEmail, setUserEmail] = useState<string>('');
 
+  // Profile screen palette
+  const palette = themeMode === 'dark'
+    ? {
+        page: '#0F172A',
+        hero: '#132A46',
+        heroBorder: '#1F3D63',
+        surface: '#111C2D',
+        card: '#17263D',
+        border: '#28405F',
+        text: '#F8FAFC',
+        subtext: '#C7D2E0',
+        accent: '#D4A853',
+        primary: '#C4622D',
+        primaryText: '#FFFFFF',
+        tabBg: '#13233A',
+        tabActive: '#D4A853',
+        tabInactive: '#AAB7C8',
+        dangerBg: '#2A1E24',
+        dangerBorder: '#5B3340',
+        dangerText: '#FCA5A5',
+      }
+    : {
+        page: '#F5F0E8',
+        hero: '#1A2E44',
+        heroBorder: '#1A2E44',
+        surface: '#FFFDF9',
+        card: '#FFFFFF',
+        border: '#DDD6CA',
+        text: '#18212B',
+        subtext: '#6B7280',
+        accent: '#D4A853',
+        primary: '#C4622D',
+        primaryText: '#FFFFFF',
+        tabBg: '#FFFFFF',
+        tabActive: '#C4622D',
+        tabInactive: '#7A7A7A',
+        dangerBg: '#FFF5F5',
+        dangerBorder: '#F3C7C7',
+        dangerText: '#C24141',
+      };
+
+  // First letter for the avatar
+  const userInitial = useMemo(() => {
+    return userName.trim().charAt(0).toUpperCase() || 'U';
+  }, [userName]);
+
+  // Load the current user whenever profile opens
   useFocusEffect(
     useCallback(() => {
       async function loadUser() {
@@ -49,6 +95,7 @@ export default function Profile({ navigation }: Props) {
     }, [navigation])
   );
 
+  // Logout action
   async function handleLogout() {
     await clearCurrentUserId();
     navigation.reset({
@@ -57,6 +104,7 @@ export default function Profile({ navigation }: Props) {
     });
   }
 
+  // Delete profile action
   function handleDeleteProfile() {
     Alert.alert(
       'Delete profile',
@@ -93,44 +141,131 @@ export default function Profile({ navigation }: Props) {
 
   return (
     <ScreenContainer>
-      <View style={styles.page}>
-        <View style={styles.infoSection}>
-          <Text style={[styles.title, { color: colors.text }]}>Profile</Text>
-          <Text style={[styles.subtitle, { color: colors.text }]}>Name: {userName}</Text>
-          <Text style={[styles.subtitle, { color: colors.text }]}>Email: {userEmail}</Text>
-        </View>
-
-        <View style={styles.actionsSection}>
-          <Pressable
+      <View style={[styles.page, { backgroundColor: palette.page }]}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {/* Top profile card */}
+          <View
             style={[
-              styles.actionButton,
+              styles.heroCard,
               {
-                backgroundColor: colors.card,
-                borderColor: colors.border,
+                backgroundColor: palette.hero,
+                borderColor: palette.heroBorder,
               },
             ]}
-            onPress={handleLogout}
           >
-            <Text style={[styles.actionButtonText, { color: colors.accent }]}>Logout</Text>
+            <View style={styles.avatarWrap}>
+              <View style={[styles.avatarCircle, { backgroundColor: palette.accent }]}>
+                <Text style={styles.avatarText}>{userInitial}</Text>
+              </View>
+            </View>
+
+            <Text style={[styles.nameText, { color: '#F8F5EF' }]}>{userName}</Text>
+            <Text style={[styles.emailText, { color: '#D7DEE8' }]}>{userEmail}</Text>
+          </View>
+
+          {/* Main settings block */}
+          <View style={styles.section}>
+            {/* Appearance row */}
+            <View
+              style={[
+                styles.settingCard,
+                {
+                  backgroundColor: palette.card,
+                  borderColor: palette.border,
+                },
+              ]}
+            >
+              <View style={styles.settingTextWrap}>
+                <Text style={[styles.settingTitle, { color: palette.text }]}>Appearance</Text>
+                <Text style={[styles.settingSubtitle, { color: palette.subtext }]}>
+                  {themeMode === 'dark' ? 'Dark mode' : 'Light mode'}
+                </Text>
+              </View>
+
+              <Pressable
+                style={[styles.settingButton, { backgroundColor: palette.hero }]}
+                onPress={toggleTheme}
+                accessibilityLabel="Toggle appearance"
+              >
+                <Text style={styles.settingButtonText}>Switch</Text>
+              </Pressable>
+            </View>
+          </View>
+
+          {/* Account actions */}
+          <View style={styles.section}>
+            <Pressable
+              style={[
+                styles.logoutButton,
+                {
+                  backgroundColor: palette.surface,
+                  borderColor: palette.border,
+                },
+              ]}
+              onPress={handleLogout}
+              accessibilityLabel="Logout"
+            >
+              <Text style={[styles.logoutButtonText, { color: palette.primary }]}>Log out</Text>
+            </Pressable>
+
+            <Pressable
+              style={[
+                styles.deleteButton,
+                {
+                  backgroundColor: palette.dangerBg,
+                  borderColor: palette.dangerBorder,
+                },
+              ]}
+              onPress={handleDeleteProfile}
+              accessibilityLabel="Delete profile"
+            >
+              <Text style={[styles.deleteButtonText, { color: palette.dangerText }]}>
+                Delete Profile
+              </Text>
+            </Pressable>
+          </View>
+        </ScrollView>
+
+        {/* Nav bar styling */}
+        <View
+          style={[
+            styles.tabBar,
+            {
+              backgroundColor: palette.tabBg,
+              borderColor: palette.border,
+            },
+          ]}
+        >
+          <Pressable
+            style={styles.tabItem}
+            onPress={() => navigation.navigate('Trips')}
+            accessibilityLabel="Trips tab"
+          >
+            <Text style={[styles.tabDot, { color: palette.tabInactive }]}>●</Text>
+            <Text style={[styles.tabText, { color: palette.tabInactive }]}>Trips</Text>
           </Pressable>
 
           <Pressable
-            style={[
-              styles.actionButton,
-              {
-                backgroundColor: colors.card,
-                borderColor: colors.border,
-              },
-            ]}
-            onPress={handleDeleteProfile}
+            style={styles.tabItem}
+            onPress={() => navigation.navigate('Insights')}
+            accessibilityLabel="Insights tab"
           >
-            <Text style={[styles.deleteButtonText, { color: colors.danger }]}>
-              Delete Profile
-            </Text>
+            <Text style={[styles.tabDot, { color: palette.tabInactive }]}>●</Text>
+            <Text style={[styles.tabText, { color: palette.tabInactive }]}>Insights</Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.tabItem}
+            onPress={() => navigation.navigate('Profile')}
+            accessibilityLabel="Profile tab"
+          >
+            <Text style={[styles.tabDot, { color: palette.tabActive }]}>●</Text>
+            <Text style={[styles.tabTextActive, { color: palette.tabActive }]}>Profile</Text>
           </Pressable>
         </View>
-
-        <ThemeToggleCard />
       </View>
     </ScreenContainer>
   );
@@ -139,37 +274,138 @@ export default function Profile({ navigation }: Props) {
 const styles = StyleSheet.create({
   page: {
     flex: 1,
-    justifyContent: 'space-between',
   },
-  infoSection: {
-    flex: 1,
-    justifyContent: 'center',
-    gap: 16,
+
+  // Leaves room for the fixed nav bar
+  scrollContent: {
+    paddingBottom: 110,
   },
-  actionsSection: {
-    gap: 12,
-    marginTop: 16,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-  },
-  subtitle: {
-    fontSize: 18,
-  },
-  actionButton: {
+
+  // Top profile block
+  heroCard: {
     borderWidth: 1,
-    borderRadius: 14,
-    paddingVertical: 14,
+    borderRadius: 12,
+    paddingVertical: 28,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  avatarWrap: {
+    marginBottom: 16,
+  },
+  avatarCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  actionButtonText: {
-    fontSize: 18,
+  avatarText: {
+    color: '#FFFFFF',
+    fontSize: 40,
     fontWeight: '700',
   },
-  deleteButtonText: {
-    fontSize: 18,
+  nameText: {
+    fontSize: 30,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  emailText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+
+  // Spacing between blocks
+  section: {
+    marginBottom: 16,
+  },
+
+  // Settings row card
+  settingCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  settingTextWrap: {
+    flex: 1,
+  },
+  settingTitle: {
+    fontSize: 20,
     fontWeight: '700',
+    marginBottom: 4,
+  },
+  settingSubtitle: {
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  settingButton: {
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  settingButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+
+  // Logout button
+  logoutButton: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  logoutButtonText: {
+    fontSize: 17,
+    fontWeight: '700',
+  },
+
+  // Delete button
+  deleteButton: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteButtonText: {
+    fontSize: 17,
+    fontWeight: '700',
+  },
+
+  // Bottom nav
+  tabBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 12,
+  },
+  tabItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+  },
+  tabDot: {
+    fontSize: 10,
+    lineHeight: 14,
+  },
+  tabText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  tabTextActive: {
+    fontSize: 13,
+    fontWeight: '800',
   },
 });
